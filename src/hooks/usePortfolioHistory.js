@@ -434,11 +434,6 @@ export function usePortfolioHistory(assets, lancamentos = []) {
 
       // ── 2. Full daily time-series (chart data) — uses HISTORICAL shares ─
       const chartData = buildChartData(allHistories, allAssets, lancamentos);
-      console.log('[usePortfolioHistory] assets:', allAssets.map(a => a.ticker),
-        '| lancamentos:', lancamentos?.length,
-        '| histories sizes:', allHistories.map(h => h?.length ?? 0),
-        '| chartData points:', chartData.length,
-        '| first:', chartData[0]?.date, '| last:', chartData[chartData.length - 1]?.date);
 
       // ── 3. Scalar PnL values ─────────────────────────────────────────────
       let currentVal = 0;

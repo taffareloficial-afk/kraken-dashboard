@@ -711,7 +711,7 @@ export default function ResumoTab({
             cdiByPeriod={cdiByPeriod}
             lancamentos={lancamentos}
             assets={assets}
-            initialType="bar"
+            initialType="line"
             initialPeriod="1Y"
             chartHeight={260}
           />

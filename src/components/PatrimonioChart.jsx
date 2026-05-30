@@ -6,7 +6,7 @@
  * Line mode: daily data, unchanged.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useIsDark } from '../ThemeContext';
 import {
   AreaChart, Area,
@@ -428,10 +428,28 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
   const isDark = useIsDark();
   const [period,    setPeriod]    = useState(initialPeriod);
   const [chartType, setChartType] = useState(initialType); // 'line' | 'bar'
+  const userToggledType           = useRef(false);
 
   // Recharts SVG attrs can't use CSS vars — resolve from theme
   const gridColor  = isDark ? '#161b22' : '#e4e8ef';
   const tickColor  = isDark ? '#484f58' : '#6e7781';
+
+  // ── How many distinct months does the data span? ──────────────────────────
+  // Bar (monthly) mode is only meaningful with ≥ 2 months of history.
+  const monthsAvailable = useMemo(() => {
+    if (!chartData?.length) return 0;
+    return new Set(chartData.map(d => d.date.slice(0, 7))).size;
+  }, [chartData]);
+
+  const barsDisabled = monthsAvailable < 2;
+
+  // Auto-switch to line mode when there isn't enough data for bars,
+  // unless the user has explicitly chosen a chart type.
+  useEffect(() => {
+    if (barsDisabled && chartType === 'bar' && !userToggledType.current) {
+      setChartType('line');
+    }
+  }, [barsDisabled, chartType]);
 
   // ── Daily slice (line mode) ───────────────────────────────────────────────
   const filteredData = useMemo(() => {
@@ -628,15 +646,21 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
             }}>
               {[
                 { key: 'line', Icon: LineChart, title: 'Linha (diário)'  },
-                { key: 'bar',  Icon: BarChart2, title: 'Barras (mensal)' },
+                { key: 'bar',  Icon: BarChart2, title: barsDisabled ? 'Barras (mensal) — disponível após 2 meses de histórico' : 'Barras (mensal)' },
               ].map(({ key, Icon, title }) => {
-                const active = chartType === key;
+                const active   = chartType === key;
+                const disabled = key === 'bar' && barsDisabled;
                 return (
                   <button
                     key={key}
-                    onClick={() => setChartType(key)}
+                    onClick={() => {
+                      if (disabled) return;
+                      userToggledType.current = true;
+                      setChartType(key);
+                    }}
                     className="btn-inline"
                     title={title}
+                    disabled={disabled}
                     style={{
                       display:        'flex',
                       alignItems:     'center',
@@ -647,7 +671,8 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
                       border:         'none',
                       background:     active ? 'var(--c-b1)' : 'transparent',
                       color:          active ? '#58a6ff' : 'var(--c-tx4)',
-                      cursor:         'pointer',
+                      cursor:         disabled ? 'not-allowed' : 'pointer',
+                      opacity:        disabled ? 0.35 : 1,
                       transition:     'all 0.15s',
                     }}
                   >
@@ -693,6 +718,13 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
           {isMonthly && (
             <p style={{ fontSize: 10, color: '#484f58', marginBottom: 8 }}>
               Último dia útil de cada mês concluído · <span style={{ opacity: 0.6 }}>barra atual em andamento</span>
+            </p>
+          )}
+
+          {/* Hint when line mode has very little history */}
+          {!isMonthly && activeData.length > 0 && activeData.length < 5 && (
+            <p style={{ fontSize: 10, color: '#484f58', marginBottom: 8 }}>
+              Histórico recente — o gráfico cresce a cada dia. Barras mensais ficam disponíveis após 2 meses.
             </p>
           )}
 
