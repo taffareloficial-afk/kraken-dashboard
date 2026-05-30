@@ -1,0 +1,490 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --color-bg: #030712;
+  --color-surface: #0d1117;
+  --color-surface-2: #161b22;
+  --color-border: #21262d;
+}
+
+/* ── Color tokens (dark = default, light = .light override) ─────────────── */
+:root {
+  --c-bg:        #030712;
+  --c-surface:   #0d1117;
+  --c-s2:        #161b22;
+  --c-s3:        #0a0e14;
+  --c-s4:        #080c11;
+  --c-b1:        #21262d;
+  --c-b2:        #1a1f27;
+  --c-b3:        #161b22;
+  --c-b4:        #30363d;
+  --c-tx1:       #e6edf3;
+  --c-tx2:       #c9d1d9;
+  --c-tx3:       #8b949e;
+  /* tx4 bumped from #484f58 → #636d79 (3.4:1 on surface — passes WCAG AA for UI components) */
+  --c-tx4:       #636d79;
+  /* tx5 now carries old tx4 value — decorative use only */
+  --c-tx5:       #484f58;
+  --c-header-bg: rgba(3,7,18,0.97);
+  /* Focus ring colour — visible on both dark and light themes */
+  --c-focus:     #3b82f6;
+}
+
+:root.light {
+  --c-bg:        #f0f3f6;
+  --c-surface:   #ffffff;
+  --c-s2:        #f6f8fa;
+  --c-s3:        #eaecf0;
+  --c-s4:        #e2e5ea;
+  --c-b1:        #d0d7de;
+  --c-b2:        #d8dee4;
+  --c-b3:        #e4e8ef;
+  --c-b4:        #bec4cc;
+  --c-tx1:       #1c2128;
+  --c-tx2:       #24292f;
+  --c-tx3:       #57606a;
+  --c-tx4:       #6e7781;
+  --c-tx5:       #8c959f;
+  --c-header-bg: rgba(246,248,250,0.97);
+}
+
+/* ── Motion system tokens ────────────────────────────────────────────────── */
+:root {
+  --dur-micro:  200ms;
+  --dur-enter:  350ms;
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ── Critical layout — declared outside @layer so they apply on ALL browsers ─ */
+/* Tailwind v4 wraps utilities in @layer (supported Safari 15.4+).              */
+/* These rules duplicate the essentials so the page renders on Safari 14.       */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  /* Full font stack so the page renders fine even if Google Fonts is blocked */
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--c-bg, #030712);
+  color: var(--c-tx1, #e6edf3);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  text-align: left;
+}
+
+/* Safe-area padding for iPhone notch / Dynamic Island */
+.safe-top    { padding-top:    env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-b4, #30363d) var(--c-surface, #0d1117);
+}
+
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-track { background: var(--c-surface, #0d1117); }
+*::-webkit-scrollbar-thumb { background: var(--c-b4, #30363d); border-radius: 3px; }
+
+.card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-b2);
+  border-radius: 12px;
+  padding: 16px;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.card-sm {
+  background: var(--c-surface);
+  border: 1px solid var(--c-b2);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Numeric alignment outside .mono (Inter with tabular-nums) */
+.tabnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.positive { color: #3fb950; }
+.negative { color: #f85149; }
+.neutral  { color: var(--c-tx3); }
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.pulse-dot {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in { animation: fade-in 0.3s ease-out; }
+
+.progress-bar-bg {
+  background: var(--c-s2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--c-s2) 25%, var(--c-b1) 50%, var(--c-s2) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Tab layout ──────────────────────────────────────────────────────────── */
+
+/* Tab content: simple column stack by default */
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Two-column grid for paired cards */
+.two-col-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .two-col-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+}
+
+/* Análise tab: uniform 16px vertical gap between cards + consistent column gap */
+.analise-grid {
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .analise-grid {
+    gap: 16px;
+  }
+}
+
+/* Resumo center section: stack on mobile → 60/40 split on desktop */
+.resumo-chart-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .resumo-chart-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 14px;
+    align-items: start;
+  }
+}
+
+/* Four summary cards: 2×2 on mobile → 4×1 on desktop */
+.summary-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  align-items: stretch;   /* equal-height cards */
+}
+
+@media (min-width: 768px) {
+  .summary-cards-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+}
+
+/* Slightly tighter cards on mobile */
+@media (max-width: 767px) {
+  .card { padding: 14px; }
+}
+
+/* ── Theme transition ────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+/* ── Visibility toggles ──────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .mobile-only { display: none !important; }
+}
+@media (max-width: 767px) {
+  .desktop-only { display: none !important; }
+}
+
+/* ── Asset table ↔ mobile cards ─────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .mobile-asset-cards { display: none !important; }
+}
+@media (max-width: 767px) {
+  .desktop-asset-table { display: none !important; }
+}
+
+/* Tablet (768-1023px): hide secondary table columns */
+@media (max-width: 1023px) {
+  .col-tablet-hide { display: none !important; }
+}
+
+/* Resumo tab expanded rows: hide secondary columns on mobile */
+@media (max-width: 767px) {
+  .resumo-col-sm-hide { display: none !important; }
+}
+
+/* Resumo category header row: show only name + value on mobile */
+@media (max-width: 767px) {
+  .resumo-cat-hide { display: none !important; }
+  .resumo-cat-btn  { gap: 8px !important; padding: 12px 16px !important; }
+  .resumo-cat-name { overflow: hidden; min-width: 0; }
+}
+
+/* ── Donut chart inner grid — stack on mobile (outerRadius 85 = 170px diam) ─ */
+@media (max-width: 767px) {
+  .donut-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  /* Donuts side-by-side need smaller height since width is ~150px */
+  .donut-grid > div > div {
+    height: 155px !important;
+  }
+}
+/* Below 420px, each donut column is too narrow — stack them */
+@media (max-width: 420px) {
+  .donut-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .donut-grid > div > div {
+    height: 170px !important;
+  }
+}
+
+/* ── Touch-friendly minimum tap target ───────────────────────────────────── */
+@media (max-width: 767px) {
+  button, [role="button"] {
+    min-height: 44px;
+  }
+  /* Exceptions for tiny inline elements that should stay compact */
+  .btn-inline { min-height: unset; }
+}
+
+/* ── Staggered card entry ────────────────────────────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.stagger-item {
+  animation: fadeSlideUp var(--dur-enter) var(--ease-out) both;
+  /* Cap stagger at index 5 (250 ms) so late items don't wait too long */
+  animation-delay: calc(min(var(--i, 0), 5) * 50ms);
+}
+
+/* ── Focus-mode overlay ──────────────────────────────────────────────────── */
+@keyframes focusFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Utility spin (used by Loader2 in AI button) ─────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Ticker tape scroll ───────────────────────────────────────────────────── */
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Interactive element transitions ─────────────────────────────────────── */
+button,
+[role="button"],
+a {
+  transition:
+    background-color var(--dur-micro) ease-out,
+    border-color     var(--dur-micro) ease-out,
+    color            var(--dur-micro) ease-out,
+    opacity          var(--dur-micro) ease-out,
+    box-shadow       var(--dur-micro) ease-out;
+}
+
+/* ── Card hover refinement ───────────────────────────────────────────────── */
+.card {
+  position:   relative;  /* needed for absolute positioned overlays */
+}
+.card:hover { border-color: var(--c-b4); }
+
+/* ── Asset drawer ────────────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .asset-drawer {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 380px;
+    border-left: 1px solid var(--c-b1);
+    animation: drawerSlideRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes drawerSlideRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@media (max-width: 767px) {
+  .asset-drawer {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 85vh;
+    border-radius: 16px 16px 0 0;
+    animation: drawerSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-top: 1px solid #21262d;
+    /* Drag handle visual affordance */
+  }
+  .asset-drawer::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--c-b4);
+    border-radius: 2px;
+    margin: 10px auto 0;
+  }
+}
+
+@keyframes drawerSlideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* ── Accessibility ───────────────────────────────────────────────────────── */
+
+/* Skip-to-content link (visually hidden until focused) */
+.skip-link {
+  position: absolute;
+  top: -999px;
+  left: 8px;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--c-surface);
+  color: var(--c-tx1);
+  border: 2px solid var(--c-focus);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: none;
+}
+.skip-link:focus {
+  top: 8px;
+}
+
+/*
+ * :focus-visible — shows ring ONLY for keyboard navigation (not mouse clicks).
+ * All inline `outline: none` on inputs/selects are overridden here so keyboard
+ * users always see a clear indicator.
+ */
+
+/* 1. Remove the ring when the user interacted with a pointer device */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 2. Restore a strong ring for keyboard / sequential focus */
+:focus-visible {
+  outline: 2px solid var(--c-focus) !important;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 3. Inputs & selects: swap outline for a glowing border so the ring sits flush */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  border-color: var(--c-focus) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* 4. Buttons that already have a visible pressed-border style — tighter offset */
+button:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 2px solid var(--c-focus) !important;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* 5. Tab-bar buttons — inset ring so it doesn't clip the sticky nav */
+nav[role="tablist"] button:focus-visible {
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+/* ── Table row quick-action overlay ─────────────────────────────────────── */
+.row-actions {
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+tr:hover .row-actions,
+tr:focus-within .row-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Always show row actions on touch / mobile */
+@media (max-width: 767px) {
+  .row-actions { opacity: 1 !important; pointer-events: auto !important; }
+}
+
+/* ── Histórico table — responsive column visibility ─────────────────────── */
+/* Hide "Qtd / Valor" on mobile */
+@media (max-width: 767px) {
+  .hist-col-md-hide { display: none !important; }
+}
+/* Hide "Preço unit." on mobile + tablet */
+@media (max-width: 1023px) {
+  .hist-col-lg-hide { display: none !important; }
+}

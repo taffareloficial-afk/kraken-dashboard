@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/yahoo/:path*",     "destination": "/api/proxy?service=yahoo&path=:path*" },
+    { "source": "/api/bcb/:path*",       "destination": "/api/proxy?service=bcb&path=:path*" },
+    { "source": "/api/coingecko/:path*", "destination": "/api/proxy?service=coingecko&path=:path*" },
+    { "source": "/api/brapi/:path*",     "destination": "/api/proxy?service=brapi&path=:path*" },
+    { "source": "/((?!api/).*)",         "destination": "/index.html" }
+  ]
+}

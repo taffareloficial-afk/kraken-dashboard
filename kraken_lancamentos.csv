@@ -1,0 +1,5 @@
+Data,Tipo,Ativo,Quantidade,Preço Unitário,Total
+2025-09-15,Compra,CDB,1.0,1000.00,1000.00
+2025-09-16,Compra,ITSA4,100,18.50,1850.00
+2025-09-17,Venda,PETR4,50,28.30,1415.00
+2025-09-18,Dividendo,ITSA4,,,50.25
