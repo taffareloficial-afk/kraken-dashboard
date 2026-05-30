@@ -441,7 +441,9 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
   }, [chartData, period]);
 
   // ── Monthly slice (bar mode) ──────────────────────────────────────────────
-  // Group filteredData by YYYY-MM, keep last entry, exclude current month.
+  // Group filteredData by YYYY-MM, keep last entry per completed month.
+  // Appends the current month as a provisional bar (isCurrentMonth: true)
+  // using the most recent point from chartData.
   const monthlyData = useMemo(() => {
     if (!filteredData.length) return [];
     const byMonth = new Map();
@@ -451,10 +453,20 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
     }
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    return Array.from(byMonth.entries())
-      .filter(([month]) => month <= currentMonth)
-      .map(([month, d]) => ({ ...d, monthKey: month }));
-  }, [filteredData]);
+
+    // Completed months only
+    const entries = Array.from(byMonth.entries())
+      .filter(([month]) => month < currentMonth)
+      .map(([month, d]) => ({ ...d, monthKey: month, isCurrentMonth: false }));
+
+    // Add current month as provisional bar using the latest point from chartData
+    const lastPoint = chartData?.length ? chartData[chartData.length - 1] : null;
+    if (lastPoint) {
+      entries.push({ ...lastPoint, monthKey: currentMonth, isCurrentMonth: true });
+    }
+
+    return entries;
+  }, [filteredData, chartData]);
 
   // ── Choose active dataset ─────────────────────────────────────────────────
   const activeData   = chartType === 'bar' ? monthlyData : filteredData;
@@ -669,7 +681,7 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
           {/* Subtitle for bar mode */}
           {isMonthly && (
             <p style={{ fontSize: 10, color: '#484f58', marginBottom: 8 }}>
-              Último dia útil de cada mês concluído
+              Último dia útil de cada mês concluído · <span style={{ opacity: 0.6 }}>barra atual em andamento</span>
             </p>
           )}
 
@@ -717,7 +729,7 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
                       <Cell
                         key={`cell-${index}`}
                         fill={entry.value >= baseValue ? '#3b82f6' : '#f85149'}
-                        fillOpacity={0.85}
+                        fillOpacity={entry.isCurrentMonth ? 0.5 : 0.85}
                       />
                     ))}
                   </Bar>
