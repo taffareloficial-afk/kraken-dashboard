@@ -235,16 +235,63 @@ function NumberInput({ value, onChange, placeholder, prefix }) {
   );
 }
 
+// ── Busca dinâmica de tickers na B3 (Yahoo Finance) ────────────────────────────
+// Permite reconhecer QUALQUER ticker válido da B3 sem cadastro manual.
+// Usa o endpoint de search do Yahoo via proxy (/api/yahoo) — funciona em dev e prod.
+async function searchB3Tickers(query) {
+  try {
+    const url = `/api/yahoo/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data   = await res.json();
+    const quotes = data?.quotes ?? [];
+    const seen   = new Set();
+    const out    = [];
+    for (const q of quotes) {
+      const sym = q.symbol ?? '';
+      if (!sym.endsWith('.SA')) continue;          // só B3 (São Paulo)
+      const base = sym.slice(0, -3);               // remove sufixo .SA
+      if (!/^[A-Z]{4}\d{1,2}$/.test(base)) continue; // ticker B3 padrão (ITSA4, TAEE11…)
+      if (seen.has(base)) continue;
+      seen.add(base);
+      out.push({ ticker: base, name: q.shortname || q.longname || base, remote: true });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 // ── SearchableSelect ──────────────────────────────────────────────────────────
 
-function SearchableSelect({ options, value, onChange, disabled, placeholder }) {
+function SearchableSelect({ options, value, onChange, disabled, placeholder, enableRemoteSearch = false }) {
   const [inputVal, setInputVal] = useState('');
   const [open,     setOpen]     = useState(false);
   const [focused,  setFocused]  = useState(false);
+  const [remoteOptions, setRemoteOptions] = useState([]);
+  const [searching,     setSearching]     = useState(false);
   const containerRef = useRef(null);
   const inputRef     = useRef(null);
 
   useEffect(() => { setInputVal(value || ''); }, [value]);
+
+  // Debounced remote search — dispara quando o usuário digita e não há match exato local
+  useEffect(() => {
+    if (!enableRemoteSearch) { setRemoteOptions([]); return; }
+    const q = inputVal.trim();
+    // Não busca se já selecionou, query curta, ou já existe match exato local
+    if (value || q.length < 2 || options.some(o => o.ticker.toLowerCase() === q.toLowerCase())) {
+      setRemoteOptions([]); setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const id = setTimeout(async () => {
+      const results = await searchB3Tickers(q);
+      setRemoteOptions(results);
+      setSearching(false);
+    }, 350);
+    return () => clearTimeout(id);
+  }, [inputVal, enableRemoteSearch, value, options]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -270,8 +317,13 @@ function SearchableSelect({ options, value, onChange, disabled, placeholder }) {
       )
     : [];
 
-  const exactMatch   = options.some(o => o.ticker.toLowerCase() === query);
-  const showManual   = query && !exactMatch;
+  // Mescla resultados locais + remotos (B3), sem duplicar tickers já listados localmente
+  const localTickers   = new Set(filtered.map(o => o.ticker.toLowerCase()));
+  const remoteFiltered = remoteOptions.filter(o => !localTickers.has(o.ticker.toLowerCase()));
+  const combined       = [...filtered, ...remoteFiltered];
+
+  const exactMatch   = combined.some(o => o.ticker.toLowerCase() === query);
+  const showManual   = query && !exactMatch && !searching;
   const manualTicker = inputVal.trim().toUpperCase();
 
   const handleInput = (e) => {
@@ -350,21 +402,27 @@ function SearchableSelect({ options, value, onChange, disabled, placeholder }) {
           boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           scrollbarWidth: 'thin', scrollbarColor: '#30363d #161b22',
         }}>
-          {filtered.length === 0 && !showManual && (
+          {combined.length === 0 && !showManual && !searching && (
             <div style={{ padding: '10px 14px', color: '#484f58', fontSize: 12 }}>Nenhum ativo encontrado</div>
           )}
-          {filtered.map((opt, idx) => (
+          {combined.map((opt, idx) => (
             <div
               key={opt.ticker}
               onMouseDown={() => select(opt.ticker)}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', cursor: 'pointer', borderBottom: idx < filtered.length - 1 ? '1px solid var(--c-b1)' : 'none', transition: 'background 0.1s' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', cursor: 'pointer', borderBottom: idx < combined.length - 1 ? '1px solid var(--c-b1)' : 'none', transition: 'background 0.1s' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#21262d'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
             >
               <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: 13, color: '#e6edf3', minWidth: 64 }}>{opt.ticker}</span>
-              <span style={{ fontSize: 12, color: '#8b949e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt.name}</span>
+              <span style={{ fontSize: 12, color: '#8b949e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{opt.name}</span>
+              {opt.remote && <span style={{ fontSize: 9, color: '#3b82f6', border: '1px solid #1e3a5f', borderRadius: 4, padding: '1px 5px' }}>B3</span>}
             </div>
           ))}
+          {searching && (
+            <div style={{ padding: '10px 14px', color: '#58a6ff', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Search size={12} /> Buscando na B3…
+            </div>
+          )}
           {showManual && (
             <div
               onMouseDown={() => select(manualTicker)}
@@ -437,6 +495,7 @@ function OperacaoForm({ tab, form, errors, set }) {
           onChange={(v) => set('ticker', v)}
           disabled={!form.assetType}
           placeholder="Buscar por ticker ou nome..."
+          enableRemoteSearch={['Ações', 'FIIs', 'ETFs'].includes(form.assetType)}
         />
       </Field>
 
@@ -678,6 +737,7 @@ function ProventoForm({ tab, form, errors, set }) {
             value={form.ticker}
             onChange={(v) => set('ticker', v)}
             placeholder="Ex: HGLG11, BBSE3..."
+            enableRemoteSearch
           />
         </Field>
       </div>
