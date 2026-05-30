@@ -452,7 +452,7 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     return Array.from(byMonth.entries())
-      .filter(([month]) => month < currentMonth)
+      .filter(([month]) => month <= currentMonth)
       .map(([month, d]) => ({ ...d, monthKey: month }));
   }, [filteredData]);
 
