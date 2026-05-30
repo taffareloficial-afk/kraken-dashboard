@@ -1,3 +1,4 @@
+// v2.1.0 - formulario lancamentos refatorado (6 tipos, Renda Fixa, ETFs Int. US$)
 import { useState, useEffect, useRef } from 'react';
 import { useTheme }               from './hooks/useTheme';
 import { ThemeContext }            from './ThemeContext';
