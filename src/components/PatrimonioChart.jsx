@@ -448,6 +448,9 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
   // Current month is included but flagged as provisional (isCurrentMonth: true)
   // so its Cell can render with lower opacity.
   const monthlyData = useMemo(() => {
+    console.log('[PatrimonioChart] chartData.length:', chartData?.length,
+      '| filteredData.length:', filteredData?.length,
+      '| period:', period);
     if (!filteredData.length) return [];
 
     const now          = new Date();
