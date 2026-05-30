@@ -444,32 +444,40 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
   }, [chartData, period]);
 
   // ── Monthly slice (bar mode) ──────────────────────────────────────────────
-  // Groups filteredData by YYYY-MM, keeps the last data point per month.
-  // Current month is included but flagged as provisional (isCurrentMonth: true)
-  // so its Cell can render with lower opacity.
+  // Groups chartData by YYYY-MM (full dataset, not just period-filtered).
+  // Uses filteredData to determine which months fall inside the period window.
+  // Current month is flagged as provisional (isCurrentMonth: true → fillOpacity 0.5).
   const monthlyData = useMemo(() => {
-    console.log('[PatrimonioChart] chartData.length:', chartData?.length,
-      '| filteredData.length:', filteredData?.length,
-      '| period:', period);
-    if (!filteredData.length) return [];
+    // Use the full chartData so we always have complete monthly coverage,
+    // then filter to only months that overlap with the selected period.
+    const source = chartData?.length ? chartData : filteredData;
+    if (!source?.length) return [];
 
     const now          = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
+    // Determine the oldest date in the period window
+    const days      = PERIODS.find(p => p.key === period)?.days ?? 180;
+    const cutoff    = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffMonth = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}`;
+
+    // Build month → last data point map from full chartData
     const byMonth = new Map();
-    for (const d of filteredData) {
-      const monthKey = d.date.slice(0, 7); // YYYY-MM
-      byMonth.set(monthKey, d);            // last entry wins (ascending sort)
+    for (const d of source) {
+      const mk = d.date.slice(0, 7);
+      byMonth.set(mk, d); // last entry wins (data is sorted ascending)
     }
 
     return Array.from(byMonth.entries())
+      .filter(([month]) => month >= cutoffMonth) // only months in period window
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([month, d]) => ({
         ...d,
         monthKey:       month,
         isCurrentMonth: month === currentMonth,
       }));
-  }, [filteredData]);
+  }, [chartData, filteredData, period]);
 
   // ── Choose active dataset ─────────────────────────────────────────────────
   const activeData   = chartType === 'bar' ? monthlyData : filteredData;
