@@ -514,6 +514,7 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
   // ── Derived state ──────────────────────────────────────────────────────────
   const adjustedPortfolio = useMemo(() => {
     const deltas     = {};
+    const costs      = {};   // soma do custo (total) das compras — usado p/ preço médio
     const tickerMeta = {};
 
     lancamentos
@@ -523,6 +524,14 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
         const typeNorm = op.type?.toLowerCase?.();
         const d   = typeNorm === 'compra' ? qty : -qty;
         deltas[op.ticker] = (deltas[op.ticker] ?? 0) + d;
+
+        // Acumula custo das compras (para derivar preço médio de ativos
+        // sem cotação de mercado, como Renda Fixa)
+        if (typeNorm === 'compra') {
+          const total = parseFloat(op.total) || ((parseFloat(op.price) || 0) * qty);
+          costs[op.ticker] = (costs[op.ticker] ?? 0) + total;
+        }
+
         if (!tickerMeta[op.ticker] && op.assetType) {
           tickerMeta[op.ticker] = {
             name: op.assetName || op.ticker,
@@ -539,11 +548,15 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
 
     for (const [ticker, delta] of Object.entries(deltas)) {
       if (!staticTickers.has(ticker) && delta > 0 && tickerMeta[ticker]) {
+        // Preço médio = custo total / quantidade. Necessário para Renda Fixa,
+        // que não tem cotação de mercado (Yahoo/CoinGecko) e é avaliada pelo custo.
+        const avgPrice = costs[ticker] > 0 ? costs[ticker] / delta : 0;
         result.push({
           ticker,
           shares: delta,
           type:   tickerMeta[ticker].type,
           name:   tickerMeta[ticker].name,
+          price:  avgPrice,
         });
       }
     }

@@ -102,16 +102,17 @@ export function usePortfolio(portfolio) {
             high: 0, low: 0, volume: 0,
           };
         }
-        // Renda Fixa: use purchase price (stored in item.price or derived from shares)
-        // since CDB/LCI have no market ticker on Yahoo Finance
+        // Renda Fixa: sem cotação de mercado (CDB/LCI não existem no Yahoo).
+        // Avalia pelo custo: preço médio (item.price vindo do adjustedPortfolio)
+        // × quantidade. Rentabilidade 0% até modelarmos os juros do indexador.
         if (item.type === 'Renda Fixa') {
-          const rfPrice = item.price ?? item.shares ?? 0; // price = purchase value per unit
+          const rfPrice = Number(item.price) || 0; // preço médio (custo/qtd)
           return {
             ...item,
             price:         rfPrice,
             changePercent: 0,
             change:        0,
-            totalValue:    rfPrice * (item.quantity ?? 1),
+            totalValue:    rfPrice * item.shares,
             prevClose:     rfPrice,
             high: 0, low: 0, volume: 0,
           };
