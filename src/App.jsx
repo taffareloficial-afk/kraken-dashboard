@@ -138,20 +138,24 @@ export default function App() {
     const pastRows = proventosRows.filter(r => !r.isFuture && r.isProjected);
     const toAdd = [];
 
+    // Dedup key: ticker|type|month. Seed with already-logged proventos so we
+    // never re-add, AND track keys added within THIS batch to prevent duplicates
+    // when proventosRows contains multiple rows for the same ticker/type/month.
+    const loggedKeys = new Set(
+      lancamentosRef.current
+        .filter(l => l.category === 'provento' && l.date)
+        .map(l => `${l.ticker}|${l.type}|${l.date.slice(0, 7)}`)
+    );
+
     for (const row of pastRows) {
       const monthKey = row.dataEx.slice(0, 7);
-      const alreadyLogged = lancamentosRef.current.some(
-        l =>
-          l.category === 'provento' &&
-          l.ticker   === row.ticker &&
-          l.type     === row.tipo   &&
-          l.date.startsWith(monthKey)
-      );
-      if (alreadyLogged) continue;
+      const key = `${row.ticker}|${row.tipo}|${monthKey}`;
+      if (loggedKeys.has(key)) continue; // already logged OR already queued in this batch
 
       const asset = adjustedPortfolio.find(a => a.ticker === row.ticker);
       if (!asset || asset.shares <= 0) continue;
 
+      loggedKeys.add(key); // reserve so a later row in this batch can't duplicate it
       toAdd.push({
         category:  'provento',
         type:       row.tipo,
