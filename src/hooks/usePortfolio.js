@@ -63,6 +63,9 @@ export function usePortfolio(portfolio) {
   const timerRef                    = useRef(null);
   // Stable ref — fetchAll always reads the latest portfolio without needing to re-create
   const portfolioRef                = useRef(portfolio);
+  // Último preço de BTC bem-sucedido — usado como fallback se a CoinGecko
+  // retornar 429 (rate-limit) num refresh, evitando faixa de erro e valor zerado.
+  const lastBtcRef                  = useRef({ price: 0, change: 0 });
 
   // Stable callback — no deps, reads portfolioRef inside
   const fetchAll = useCallback(async () => {
@@ -83,12 +86,22 @@ export function usePortfolio(portfolio) {
       const stockTickers = port
         .filter(a => a.type !== 'Cripto' && !rendaFixaTickers.has(a.ticker))
         .map(a => a.ticker);
+      // Buscas resilientes: uma falha (ex: CoinGecko 429) não derruba a outra
+      // nem dispara faixa de erro global.
       const [yahooResults, btcData] = await Promise.all([
-        fetchAllYahoo(stockTickers),
-        fetchBitcoin(),
+        fetchAllYahoo(stockTickers).catch(e => { console.warn('[Yahoo] falhou:', e?.message); return []; }),
+        fetchBitcoin().catch(e => { console.warn('[CoinGecko] BTC indisponível (mantendo último preço):', e?.message); return null; }),
       ]);
-      const btcPrice  = btcData?.bitcoin?.brl ?? 0;
-      const btcChange = btcData?.bitcoin?.brl_24h_change ?? 0;
+
+      // BTC: usa o preço novo se veio; senão mantém o último conhecido (sem zerar)
+      let btcPrice  = btcData?.bitcoin?.brl ?? 0;
+      let btcChange = btcData?.bitcoin?.brl_24h_change ?? 0;
+      if (btcPrice > 0) {
+        lastBtcRef.current = { price: btcPrice, change: btcChange };
+      } else {
+        btcPrice  = lastBtcRef.current.price;
+        btcChange = lastBtcRef.current.change;
+      }
 
       const updated = port.map(item => {
         if (item.type === 'Cripto') {
