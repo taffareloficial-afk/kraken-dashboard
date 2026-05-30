@@ -129,6 +129,7 @@ function toRow(item, uid) {
  */
 function inferAssetType(ticker) {
   if (!ticker) return 'Ações';
+  if (/^(CDB|LCI|LCA|LC|LF|RDB|CRI|CRA|DEBENTURE|TESOURO|SELIC|PREFIXADO|IPCA)/i.test(ticker)) return 'Renda Fixa';
   if (/11B?$/i.test(ticker)) return 'FIIs';    // HGLG11, XPLG11B
   if (/(34|32|33|35|39)$/i.test(ticker)) return 'BDRs'; // AAPL34, MSFT32
   if (/BTC|ETH|BNB|SOL|ADA|XRP/i.test(ticker)) return 'Cripto';

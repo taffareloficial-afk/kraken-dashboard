@@ -139,6 +139,7 @@ function buildBenchmarkSlice(chartData, ibovHist, cdiData, fromDate) {
 /**
  * Compute shares of a ticker held at targetDate based on lançamentos.
  * Sums compras (+qty) and subtracts vendas (-qty) up to and including targetDate.
+ * Case-insensitive type comparison handles data stored with mixed case (e.g. 'Compra').
  */
 function sharesAt(lancamentos, ticker, targetDateStr) {
   if (!lancamentos?.length) return 0;
@@ -147,9 +148,10 @@ function sharesAt(lancamentos, ticker, targetDateStr) {
     if (l.category !== 'operacao') continue;
     if (l.ticker !== ticker) continue;
     if (!l.date || l.date > targetDateStr) continue;
-    const qty = parseFloat(l.quantity) || 0;
-    if (l.type === 'compra')      shares += qty;
-    else if (l.type === 'venda')  shares -= qty;
+    const qty  = parseFloat(l.quantity) || 0;
+    const tipo = l.type?.toLowerCase?.();
+    if (tipo === 'compra')      shares += qty;
+    else if (tipo === 'venda')  shares -= qty;
   }
   return Math.max(0, shares);
 }
@@ -185,8 +187,9 @@ function cashFromVendasAt(lancamentos, targetDateStr) {
     if (l.category !== 'operacao') continue;
     if (!l.date || l.date > targetDateStr) continue;
     const value = parseFloat(l.total) || (parseFloat(l.price) * parseFloat(l.quantity)) || 0;
-    if (l.type === 'compra')     compras += value;
-    else if (l.type === 'venda') vendas  += value;
+    const tipo  = l.type?.toLowerCase?.();
+    if (tipo === 'compra')     compras += value;
+    else if (tipo === 'venda') vendas  += value;
   }
   // Cash hoarded = vendas - compras (only when positive, accumulation phase ⇒ 0)
   return Math.max(0, vendas - compras);
@@ -349,17 +352,23 @@ const INITIAL_STATE = {
 export function usePortfolioHistory(assets, lancamentos = []) {
   const [state, setState] = useState(INITIAL_STATE);
   const fetchedRef        = useRef(false);
+  // Track lancamentos count so history re-fetches when user imports/adds transactions
+  const lancCountRef      = useRef(null);
 
   useEffect(() => {
     // No portfolio yet — resolve loading so charts render their empty state.
     // Also reset the guard so the next render (after user adds lancamentos) triggers a fetch.
     if (!assets?.length) {
-      fetchedRef.current = false;
+      fetchedRef.current  = false;
+      lancCountRef.current = null;
       setState(s => ({ ...s, loading: false }));
       return;
     }
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
+    const lancCount = lancamentos?.length ?? 0;
+    // Re-fetch when: never fetched yet, OR lancamentos count changed (import/add)
+    if (fetchedRef.current && lancCountRef.current === lancCount) return;
+    fetchedRef.current   = true;
+    lancCountRef.current = lancCount;
 
     const run = async () => {
       const now   = new Date();
@@ -543,7 +552,7 @@ export function usePortfolioHistory(assets, lancamentos = []) {
       console.error('usePortfolioHistory error:', err);
       setState(s => ({ ...s, loading: false }));
     });
-  }, [assets]);
+  }, [assets, lancamentos]);
 
   return state;
 }

@@ -58,7 +58,7 @@ const PERIODS = [
 
 function calcPMData(lancamentos) {
   const pmData = {};
-  for (const op of (lancamentos ?? []).filter(l => l.category === 'operacao' && l.type === 'compra')) {
+  for (const op of (lancamentos ?? []).filter(l => l.category === 'operacao' && l.type?.toLowerCase?.() === 'compra')) {
     const t = op.ticker;
     if (!pmData[t]) pmData[t] = { totalInvestido: 0, totalQty: 0, gcRealizado: 0 };
     pmData[t].totalInvestido += (op.total ?? op.price * op.quantity) || 0;
@@ -85,13 +85,15 @@ function calcPMData(lancamentos) {
 // reflects the cost basis of positions held at end-of-month.
 function calcInvestedValueByMonth(lancamentos) {
   const ops = (lancamentos ?? [])
-    .filter(l => l.category === 'operacao' && (l.type === 'compra' || l.type === 'venda'))
+    .filter(l => l.category === 'operacao' && (l.type?.toLowerCase?.() === 'compra' || l.type?.toLowerCase?.() === 'venda'))
     .filter(l => l.date && l.ticker)
     .sort((a, b) => {
       const dateDiff = a.date.localeCompare(b.date);
       if (dateDiff !== 0) return dateDiff;
       // Same date: compras first so PM is established before any sales
-      if (a.type !== b.type) return a.type === 'compra' ? -1 : 1;
+      const aType = a.type?.toLowerCase?.();
+      const bType = b.type?.toLowerCase?.();
+      if (aType !== bType) return aType === 'compra' ? -1 : 1;
       // Same date and type: use createdAt as final tie-breaker
       return (a.createdAt || '').localeCompare(b.createdAt || '');
     });
@@ -116,14 +118,15 @@ function calcInvestedValueByMonth(lancamentos) {
     if (!state[t]) state[t] = { pm: 0, qty: 0 };
     const s = state[t];
 
-    if (op.type === 'compra') {
+    const opType = op.type?.toLowerCase?.();
+    if (opType === 'compra') {
       // Weighted-average PM update
       const newQty = s.qty + qty;
       if (newQty > 0) {
         s.pm = (s.pm * s.qty + total) / newQty;
       }
       s.qty = newQty;
-    } else if (op.type === 'venda') {
+    } else if (opType === 'venda') {
       // Selling does NOT change PM — only reduces quantity
       s.qty = Math.max(0, s.qty - qty);
       // Optional: if qty hits zero, keep PM at 0 (no remaining position)

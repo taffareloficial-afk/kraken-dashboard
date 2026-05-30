@@ -76,7 +76,13 @@ export function usePortfolio(portfolio) {
       return;
     }
     try {
-      const stockTickers = port.filter(a => a.type !== 'Cripto').map(a => a.ticker);
+      // Renda Fixa assets (CDB, LCI, etc.) have no Yahoo ticker — skip Yahoo fetch for them
+      const rendaFixaTickers = new Set(
+        port.filter(a => a.type === 'Renda Fixa').map(a => a.ticker)
+      );
+      const stockTickers = port
+        .filter(a => a.type !== 'Cripto' && !rendaFixaTickers.has(a.ticker))
+        .map(a => a.ticker);
       const [yahooResults, btcData] = await Promise.all([
         fetchAllYahoo(stockTickers),
         fetchBitcoin(),
@@ -93,6 +99,20 @@ export function usePortfolio(portfolio) {
             change:        btcPrice * (btcChange / 100),
             totalValue:    btcPrice * item.shares,
             prevClose:     btcPrice / (1 + btcChange / 100),
+            high: 0, low: 0, volume: 0,
+          };
+        }
+        // Renda Fixa: use purchase price (stored in item.price or derived from shares)
+        // since CDB/LCI have no market ticker on Yahoo Finance
+        if (item.type === 'Renda Fixa') {
+          const rfPrice = item.price ?? item.shares ?? 0; // price = purchase value per unit
+          return {
+            ...item,
+            price:         rfPrice,
+            changePercent: 0,
+            change:        0,
+            totalValue:    rfPrice * (item.quantity ?? 1),
+            prevClose:     rfPrice,
             high: 0, low: 0, volume: 0,
           };
         }
