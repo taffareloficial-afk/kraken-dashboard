@@ -444,32 +444,29 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
   }, [chartData, period]);
 
   // ── Monthly slice (bar mode) ──────────────────────────────────────────────
-  // Group filteredData by YYYY-MM, keep last entry per completed month.
-  // Appends the current month as a provisional bar (isCurrentMonth: true)
-  // using the most recent point from chartData.
+  // Groups filteredData by YYYY-MM, keeps the last data point per month.
+  // Current month is included but flagged as provisional (isCurrentMonth: true)
+  // so its Cell can render with lower opacity.
   const monthlyData = useMemo(() => {
     if (!filteredData.length) return [];
+
+    const now          = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
     const byMonth = new Map();
     for (const d of filteredData) {
       const monthKey = d.date.slice(0, 7); // YYYY-MM
-      byMonth.set(monthKey, d);            // last entry wins (sorted ascending)
-    }
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-    // Completed months only
-    const entries = Array.from(byMonth.entries())
-      .filter(([month]) => month < currentMonth)
-      .map(([month, d]) => ({ ...d, monthKey: month, isCurrentMonth: false }));
-
-    // Add current month as provisional bar using the latest point from chartData
-    const lastPoint = chartData?.length ? chartData[chartData.length - 1] : null;
-    if (lastPoint) {
-      entries.push({ ...lastPoint, monthKey: currentMonth, isCurrentMonth: true });
+      byMonth.set(monthKey, d);            // last entry wins (ascending sort)
     }
 
-    return entries;
-  }, [filteredData, chartData]);
+    return Array.from(byMonth.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, d]) => ({
+        ...d,
+        monthKey:       month,
+        isCurrentMonth: month === currentMonth,
+      }));
+  }, [filteredData]);
 
   // ── Choose active dataset ─────────────────────────────────────────────────
   const activeData   = chartType === 'bar' ? monthlyData : filteredData;

@@ -244,7 +244,9 @@ function buildChartData(histories, assets, lancamentos) {
     // Skip dates before the user had any holdings (value = 0)
     if (hasLancamentos && value === 0) return null;
 
-    return covered >= Math.ceil(assets.length / 2)
+    // Include point if at least 1 asset has price data (weekends covered by crypto)
+    // and portfolio has value (skip pre-purchase dates)
+    return covered >= 1
       ? { date: dateStr, value: Math.round(value * 100) / 100 }
       : null;
   });
