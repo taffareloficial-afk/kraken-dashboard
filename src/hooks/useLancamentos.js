@@ -30,6 +30,9 @@ const RESET_KEY    = 'kraken_reset_v1';
 // IDs que já foram enviados ao Supabase pelo menos uma vez.
 // Permite distinguir "item novo local" de "item deletado em outro device".
 const SYNCED_IDS_KEY = 'kraken_synced_ids';
+// Chaves de proventos (ticker|tipo|YYYY-MM) que o usuário DELETOU manualmente.
+// Impede que o auto-log de proventos os recrie no próximo carregamento.
+const SUPPRESS_KEY = 'kraken_suppressed_autolog';
 
 const KRAKEN_KEYS = [
   'kraken_lancamentos',
@@ -77,6 +80,26 @@ function loadSyncedIds() {
 /** Persiste o Set de IDs sincronizados */
 function saveSyncedIds(ids) {
   lsSet(SYNCED_IDS_KEY, JSON.stringify([...ids]));
+}
+
+/** Chave canônica de provento para o auto-log: ticker|tipo|YYYY-MM */
+function proventoKey(item) {
+  if (!item?.ticker || !item?.date) return null;
+  return `${item.ticker}|${item.type}|${item.date.slice(0, 7)}`;
+}
+
+/** Carrega o Set de chaves de proventos suprimidas (deletadas pelo usuário) */
+export function loadSuppressedAutologKeys() {
+  try { return new Set(JSON.parse(lsGet(SUPPRESS_KEY) ?? '[]')); }
+  catch { return new Set(); }
+}
+
+/** Adiciona uma chave à lista de proventos suprimidos */
+function addSuppressedKey(key) {
+  if (!key) return;
+  const s = loadSuppressedAutologKeys();
+  s.add(key);
+  lsSet(SUPPRESS_KEY, JSON.stringify([...s]));
 }
 
 // ── Asset-type normalisation ──────────────────────────────────────────────────
@@ -220,12 +243,13 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
 
   // ── sbDeleteOne: deleta 1 item no Supabase via fetch direto ─────────────────
   const sbDeleteOne = useCallback((id) => {
-    if (!SUPABASE_ENABLED) return;
+    if (!SUPABASE_ENABLED) return Promise.resolve({ error: null });
     const uid = userId ?? 'offline';
     console.log(`[Kraken Sync] 🗑 DELETE Supabase id=${id} user_id=${uid}`);
-    sbFetch.delete('lancamentos', { id, user_id: uid }).then(({ error }) => {
+    return sbFetch.delete('lancamentos', { id, user_id: uid }).then(({ error }) => {
       if (error) { console.error('[Kraken Sync] ✗ DELETE falhou:', error); setSyncStatus('error'); }
       else { console.log(`[Kraken Sync] ✓ DELETE OK id=${id}`); setSyncStatus('synced'); }
+      return { error };
     });
   }, [userId]);
 
@@ -412,19 +436,44 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
   }, [syncBackend, syncFirebase, sbUpsert]);
 
   const remove = useCallback((id) => {
-    // Fire Supabase DELETE first (before localStorage) so mobile Safari
-    // doesn't cancel the request when the page updates/transitions.
-    if (syncBackend === 'supabase') {
-      console.log('[Kraken] deletando do Supabase:', id);
-      sbDeleteOne(id);
+    // Guarda o item antes de remover (para reverter em caso de falha)
+    const prevItem = lancamentosRef.current.find(l => l.id === id);
+
+    // Se for um provento, suprime sua chave para o auto-log NÃO recriá-lo
+    // no próximo carregamento (causa raiz do "registro volta após reload").
+    if (prevItem && prevItem.category === 'provento') {
+      addSuppressedKey(proventoKey(prevItem));
     }
 
+    // Remoção otimista do estado local
     setLancamentos(prev => {
       const next = prev.filter(l => l.id !== id);
       persist(next);
       if (syncBackend === 'firebase') syncFirebase(next);
       return next;
     });
+
+    // Supabase DELETE — em caso de falha, reverte e sinaliza erro
+    if (syncBackend === 'supabase') {
+      console.log('[Kraken] deletando do Supabase:', id);
+      sbDeleteOne(id).then(({ error }) => {
+        if (error && prevItem) {
+          console.error('[Kraken] DELETE falhou — restaurando registro na tela');
+          setLancamentos(prev => {
+            if (prev.some(l => l.id === id)) return prev; // já restaurado
+            const restored = [prevItem, ...prev];
+            persist(restored);
+            return restored;
+          });
+          setSyncStatus('error');
+          try {
+            window.dispatchEvent(new CustomEvent('kraken-toast', {
+              detail: { type: 'error', message: 'Não foi possível remover o lançamento. Tente novamente.' },
+            }));
+          } catch { /* noop */ }
+        }
+      });
+    }
   }, [syncBackend, syncFirebase, sbDeleteOne]);
 
   const update = useCallback((id, changes) => {

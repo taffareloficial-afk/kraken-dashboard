@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTheme }               from './hooks/useTheme';
 import { ThemeContext }            from './ThemeContext';
 import { usePortfolio }           from './hooks/usePortfolio';
-import { useLancamentos }         from './hooks/useLancamentos';
+import { useLancamentos, loadSuppressedAutologKeys } from './hooks/useLancamentos';
 import { useProventosProximos }   from './hooks/useProventosProximos';
 import { useSeedData }            from './hooks/useSeedData';
 import { usePortfolioHistory }    from './hooks/usePortfolioHistory';
@@ -156,6 +156,8 @@ export default function App() {
         .filter(l => l.category === 'provento' && l.date)
         .map(l => `${l.ticker}|${l.type}|${l.date.slice(0, 7)}`)
     );
+    // Inclui proventos que o usuário deletou manualmente — não recriar
+    loadSuppressedAutologKeys().forEach(k => loggedKeys.add(k));
 
     for (const row of pastRows) {
       const monthKey = row.dataEx.slice(0, 7);
