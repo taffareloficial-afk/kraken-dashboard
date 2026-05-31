@@ -7,6 +7,8 @@
  *   31/05/2025,Venda,PETR4,50,28.30,1415.00
  */
 
+import { classifyTickerPlural } from '../utils/assetClass.js';
+
 /**
  * Converte data dd/mm/aaaa → yyyy-mm-dd
  * @param {string} dateStr - Data em formato dd/mm/aaaa
@@ -84,12 +86,7 @@ function normalizeTicker(ticker) {
  * @returns {string}
  */
 function inferAssetType(ticker) {
-  if (!ticker) return 'Ações';
-  if (/^(CDB|LCI|LCA|LC|CRA|CRI|TESOURO|DEBENTURE|RDB|RENDA\s*FIXA)/i.test(ticker)) return 'Renda Fixa';
-  if (/11B?$/i.test(ticker)) return 'FIIs';
-  if (/(34|32|33|35|39)$/i.test(ticker)) return 'BDRs';
-  if (/BTC|ETH|BNB|SOL|ADA|XRP/i.test(ticker)) return 'Cripto';
-  return 'Ações';
+  return classifyTickerPlural(ticker);
 }
 
 /**

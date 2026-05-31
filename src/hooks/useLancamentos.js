@@ -21,6 +21,8 @@ import { doc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 // Supabase (fetch-based micro-client)
 import { sbFetch, SUPABASE_ENABLED } from '../lib/supabase';
+// Classificador único de ativos por ticker
+import { classifyTickerPlural } from '../utils/assetClass';
 
 // ── localStorage keys ─────────────────────────────────────────────────────────
 const LS_KEY       = 'kraken_lancamentos';
@@ -125,15 +127,11 @@ function toRow(item, uid) {
 
 /**
  * Infere o tipo de ativo pelo ticker (necessário porque assetType não está no Supabase).
- * Sem isso, tickers fora do PORTFOLIO estático são ignorados no cálculo de patrimônio.
+ * Usa o classificador compartilhado (whitelist de ETFs + lista de ações-unit como
+ * TAEE11), retornando a convenção plural usada em adjustedPortfolio/KRAKEN_MODEL.
  */
 function inferAssetType(ticker) {
-  if (!ticker) return 'Ações';
-  if (/^(CDB|LCI|LCA|LC|LF|RDB|CRI|CRA|DEBENTURE|TESOURO|SELIC|PREFIXADO|IPCA)/i.test(ticker)) return 'Renda Fixa';
-  if (/11B?$/i.test(ticker)) return 'FIIs';    // HGLG11, XPLG11B
-  if (/(34|32|33|35|39)$/i.test(ticker)) return 'BDRs'; // AAPL34, MSFT32
-  if (/BTC|ETH|BNB|SOL|ADA|XRP/i.test(ticker)) return 'Cripto';
-  return 'Ações';
+  return classifyTickerPlural(ticker);
 }
 
 /**

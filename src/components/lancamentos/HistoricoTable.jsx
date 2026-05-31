@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Trash2, Filter, X, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { classifyTicker } from '../../utils/assetClass';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmtBRL = v =>
@@ -11,39 +12,8 @@ const fmtDate = d => {
   return `${day}/${m}/${y}`;
 };
 
-// ── Asset class classification ─────────────────────────────────────────────────
-const getTickerClass = (ticker, assetType) => {
-  if (!ticker) return null;
-
-  // Priority 1: Use assetType from database
-  if (assetType === 'Renda Fixa') return 'Renda Fixa';
-  if (assetType === 'ETF') return 'ETF';
-
-  // Priority 2: FII pattern (ends with 11)
-  if (ticker.endsWith('11') && /^[A-Z]+11$/.test(ticker)) {
-    return 'FII';
-  }
-
-  // Priority 3: Check for Renda Fixa keywords
-  const upperTicker = ticker.toUpperCase();
-  if (upperTicker.includes('CDB') ||
-      upperTicker.includes('LCA') ||
-      upperTicker.includes('LCI') ||
-      upperTicker.includes('TESOURO') ||
-      upperTicker.includes('SELIC') ||
-      upperTicker.includes('IPCA')) {
-    return 'Renda Fixa';
-  }
-
-  // Priority 4: Cripto (short codes: BTC, ETH, SOL, etc)
-  if (ticker.length <= 4) return 'Cripto';
-
-  // Priority 5: Check for specific patterns
-  if (/[3456789]$/.test(ticker)) return 'Ação';
-
-  // Default
-  return 'Ação';
-};
+// ── Asset class classification (lógica única compartilhada) ─────────────────────
+const getTickerClass = (ticker, assetType) => ticker ? classifyTicker(ticker, assetType) : null;
 
 const ASSET_CLASS_CFG = {
   'FII': { label: 'FII', bg: '#2d1a3d', color: '#a78bfa', border: '#6d28d9' },
