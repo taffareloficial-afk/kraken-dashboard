@@ -738,6 +738,7 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
               </span>
             </div>
           ) : (
+            <div data-private>
             <ResponsiveContainer width="100%" height={chartHeight}>
               {chartType === 'line' ? (
                 <AreaChart {...sharedProps}>
@@ -779,6 +780,7 @@ export default function PatrimonioChart({ chartData, loading, benchmarkSeries, a
                 </BarChart>
               )}
             </ResponsiveContainer>
+            </div>
           )}
 
           {/* Period summary panel */}

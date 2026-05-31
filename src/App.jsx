@@ -112,6 +112,16 @@ export default function App() {
   const proventosHook = useProventosProximos(proventosTickers);
   const { rows: proventosRows } = proventosHook;
 
+  // ── Privacidade (ocultar valores) ─────────────────────────────────────────
+  const [hideValues, setHideValues] = useState(() => {
+    try { return localStorage.getItem('kraken_hide_values') === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    document.body.classList.toggle('kraken-private', hideValues);
+    try { localStorage.setItem('kraken_hide_values', hideValues ? '1' : '0'); } catch { /* noop */ }
+    return () => document.body.classList.remove('kraken-private');
+  }, [hideValues]);
+
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('resumo');
 
@@ -347,6 +357,8 @@ export default function App() {
         dailyPnL={dailyPnL}
         isDark={isDark}
         onToggleTheme={toggleTheme}
+        hideValues={hideValues}
+        onToggleHideValues={() => setHideValues(v => !v)}
         onLogoClick={() => handleTabChange('resumo')}
         syncNode={
           <SyncBadge

@@ -122,6 +122,27 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Privacy mode (Ocultar valores) ──────────────────────────────────────────
+   Quando body.kraken-private está ativo, desfoca todos os números financeiros
+   (.mono) e qualquer elemento marcado com [data-private]. Mantém o layout
+   intacto (sem deslocar) e transição suave. */
+.mono,
+.tabnum,
+[data-private] {
+  transition: filter 0.2s ease;
+}
+/* Cobre números com classe (.mono/.tabnum), marcados manualmente ([data-private])
+   e qualquer elemento que use a fonte monoespaçada inline (estilo contém
+   "JetBrains Mono") — assim pega valores formatados via style inline também. */
+body.kraken-private .mono,
+body.kraken-private .tabnum,
+body.kraken-private [data-private],
+body.kraken-private [style*="JetBrains Mono"] {
+  filter: blur(7px);
+  user-select: none;
+  cursor: default;
+}
+
 /* Numeric alignment outside .mono (Inter with tabular-nums) */
 .tabnum {
   font-variant-numeric: tabular-nums;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, TrendingUp, TrendingDown, Sun, Moon } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Sun, Moon, Eye, EyeOff } from 'lucide-react';
 import KrakenLogo from './KrakenLogo';
 
 const fmtCurrency = v =>
@@ -26,6 +26,7 @@ export default function Header({
   lastUpdate, trading, onRefresh, loading,
   totalValue = 0, dailyPnL = 0,
   isDark, onToggleTheme,
+  hideValues = false, onToggleHideValues,  // privacidade: ocultar/mostrar valores
   onLogoClick,  // navigate back to the Resumo tab
   syncNode,     // optional: <SyncBadge /> rendered before the theme toggle
 }) {
@@ -141,6 +142,25 @@ export default function Header({
             <RefreshCw size={11} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
             <span className="hidden sm:inline">Atualizar</span>
           </button>
+
+          {/* ── Ocultar/mostrar valores ──────────────────────────────── */}
+          {onToggleHideValues && (
+            <button
+              onClick={onToggleHideValues}
+              aria-label={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+              aria-pressed={hideValues}
+              title={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+              className="btn-inline"
+              style={{ ...btnBase, width: 32, padding: 0, justifyContent: 'center', color: hideValues ? '#3b82f6' : 'var(--c-tx3)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--c-b4)'; e.currentTarget.style.color = '#3b82f6'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--c-b1)'; e.currentTarget.style.color = hideValues ? '#3b82f6' : 'var(--c-tx3)'; }}
+            >
+              {hideValues
+                ? <EyeOff size={13} aria-hidden="true" />
+                : <Eye    size={13} aria-hidden="true" />
+              }
+            </button>
+          )}
 
           {/* ── Theme toggle ─────────────────────────────────────────── */}
           <button
