@@ -78,6 +78,7 @@ const TYPE_CFG = {
   venda:       { label: 'Venda',       bg: '#2d1215', color: '#f85149', border: '#6e1c1f' },
   dividendo:   { label: 'Dividendo',   bg: '#2c1f06', color: '#f59e0b', border: '#6e4c1a' },
   jcp:         { label: 'JCP',         bg: '#1a1a2e', color: '#8b5cf6', border: '#3d2a7a' },
+  jscp:        { label: 'JSCP',        bg: '#1e1233', color: '#a855f7', border: '#4c2a6e' },
   rendimento:  { label: 'Rendimento',  bg: '#0d1e2e', color: '#3b82f6', border: '#1e3a5f' },
   amortização: { label: 'Amortiz.',    bg: '#1a1a2e', color: '#8b5cf6', border: '#3d2a7a' },
   restituição: { label: 'Restituição', bg: '#0d1e2e', color: '#3b82f6', border: '#1e3a5f' },
@@ -333,6 +334,7 @@ export default function HistoricoTable({ lancamentos, onRemove, onEdit }) {
             <option value="venda">Venda</option>
             <option value="dividendo">Dividendo</option>
             <option value="jcp">JCP</option>
+            <option value="jscp">JSCP</option>
             <option value="rendimento">Rendimento</option>
           </select>
 

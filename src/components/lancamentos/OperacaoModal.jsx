@@ -106,9 +106,10 @@ const TABS = [
   { key: 'venda',      label: '↓  Venda',      color: '#f85149', bg: '#2d1215', border: '#6e1c1f' },
   { key: 'rendimento', label: '💰 Rendimento', color: '#3b82f6', bg: '#0d1e2e', border: '#1e3a5f' },
   { key: 'dividendo',  label: '💵 Dividendo',  color: '#f59e0b', bg: '#2c1f06', border: '#6e4c1a' },
+  { key: 'jscp',       label: '🏦 JSCP',       color: '#a855f7', bg: '#1e1233', border: '#4c2a6e' },
 ];
 
-const isProvento = (tab) => tab === 'rendimento' || tab === 'dividendo';
+const isProvento = (tab) => tab === 'rendimento' || tab === 'dividendo' || tab === 'jscp';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -709,15 +710,17 @@ function ProventoForm({ tab, form, errors, set }) {
         padding: '10px 14px', borderRadius: 9,
         background: tabCfg.bg, border: `1px solid ${tabCfg.border}`,
       }}>
-        <span style={{ fontSize: 20 }}>{tab === 'rendimento' ? '💰' : '💵'}</span>
+        <span style={{ fontSize: 20 }}>{tab === 'rendimento' ? '💰' : tab === 'jscp' ? '🏦' : '💵'}</span>
         <div>
           <p style={{ fontSize: 13, fontWeight: 600, color: tabCfg.color }}>
-            Registrar {tab === 'rendimento' ? 'Rendimento' : 'Dividendo'}
+            Registrar {tab === 'rendimento' ? 'Rendimento' : tab === 'jscp' ? 'JSCP' : 'Dividendo'}
           </p>
           <p style={{ fontSize: 11, color: '#484f58', marginTop: 2 }}>
             {tab === 'rendimento'
               ? 'Proventos de FIIs — registre o valor total recebido'
-              : 'Dividendos de ações — registre o valor total recebido'}
+              : tab === 'jscp'
+                ? 'Juros sobre Capital Próprio — registre o valor líquido recebido'
+                : 'Dividendos de ações — registre o valor total recebido'}
           </p>
         </div>
       </div>
