@@ -303,7 +303,6 @@ export default function HistoricoTable({ lancamentos, onRemove, onEdit }) {
             <option value="compra">Compra</option>
             <option value="venda">Venda</option>
             <option value="dividendo">Dividendo</option>
-            <option value="jcp">JCP</option>
             <option value="jscp">JSCP</option>
             <option value="rendimento">Rendimento</option>
           </select>
