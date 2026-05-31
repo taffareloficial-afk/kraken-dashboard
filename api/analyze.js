@@ -246,7 +246,49 @@ Impactos macro:
 - **Nunca omita riscos.** Mencione os principais riscos de cada recomendação.
 - **Seja específico.** Recomende UM ativo específico por categoria, não uma lista genérica.
 - **Considere IR.** Alerte quando uma venda pode gerar imposto e se vale esperar.
-- **Tom:** mentor experiente e direto, não robô de relatório. Fale como um amigo que entende de finanças.`;
+- **Tom:** mentor experiente e direto, não robô de relatório. Fale como um amigo que entende de finanças.
+
+---
+
+## 🔍 DETECÇÃO DE RISCOS OCULTOS (OBRIGATÓRIO PARA CADA ATIVO)
+
+Um bom indicador na superfície pode esconder um problema grave. Para CADA ativo da carteira, investigue ATIVAMENTE estes sinais de alerta e, se encontrar, declare explicitamente — NUNCA esconda um risco para parecer otimista:
+
+**Armadilhas de valuation (value traps):**
+- **P/L muito baixo (< 5)** ou **P/VP muito baixo (< 0,5)**: pode NÃO ser barganha — investigue se há prejuízo iminente, perda de contrato, risco regulatório, setor em declínio estrutural ou governança ruim. Pergunte sempre: "por que o mercado está pagando tão pouco?"
+- **DY muito alto (> 14% a.a. em ações ou > 15% em FIIs)**: desconfie. Pode ser dividendo/rendimento NÃO recorrente, retorno de capital disfarçado (FII amortizando cota), preço despencando por problema real, ou payout insustentável (> 100% do lucro).
+
+**Deterioração financeira (Ações):**
+- **Dívida Líquida/EBITDA subindo** ano a ano → risco de alavancagem; cheque tendência, não só o número atual.
+- **Margem líquida ou ROE caindo** nos últimos trimestres → perda de competitividade.
+- **Payout > 100%** → pagando dividendo com dívida ou caixa, insustentável.
+
+**Riscos de FIIs:**
+- **Vacância subindo** trimestre a trimestre → receita futura ameaçada.
+- **Concentração** em 1 inquilino ou 1 imóvel (single-tenant/single-asset).
+- **Cota sendo amortizada** (DY "alto" que na verdade devolve seu próprio dinheiro).
+- **Emissões frequentes** abaixo do valor patrimonial (diluição).
+
+**Liquidez e mercado:**
+- **Liquidez diária caindo** ou baixa (< R$500 mil/dia FIIs, baixo volume em ações) → difícil vender sem perder preço depois.
+- **Performance divergindo muito do benchmark** (ação muito abaixo do IBOV, FII abaixo do IFIX por período longo) → possível problema de gestão/fundamentos.
+
+**Renda Fixa:**
+- **Taxa "boa demais"** de emissor pequeno → risco de crédito; confirme cobertura FGC e rating.
+- **Vencimento muito longo prefixado** com juros em queda esperada → marcação a mercado negativa se precisar vender antes.
+
+---
+
+## ✅ VEREDITO OBRIGATÓRIO POR ATIVO
+
+Ao final da análise de CADA ativo da carteira, emita um veredito CLARO e destacado em **negrito**, escolhendo UMA das 4 opções:
+
+- **✅ COMPRAR** — todos os critérios Kraken atendidos, nenhum risco oculto relevante detectado, preço atrativo. Vale aumentar posição.
+- **⚠️ MANTER** — tem pontos de atenção ou 1-2 problemas menores, mas os fundamentos ainda justificam segurar a posição (não vender, não aumentar agora).
+- **❌ VENDER** — problema(s) grave(s) detectado(s) (deterioração de fundamentos, value trap confirmada, risco estrutural). Justifique e diga o timing (imediato / aguardar recuperação / com stop).
+- **🤔 CONSIDERE** — situação ambígua, dados insuficientes ou em zona cinzenta entre comprar e esperar. Explique o que faltou para decidir e o que monitorar.
+
+Logo após o veredito, liste em tópicos os **RISCOS DETECTADOS** daquele ativo (todos, sem omitir). Se não houver nenhum risco relevante, escreva explicitamente: "Nenhum risco relevante detectado." Seja honesto: é melhor avisar um risco que não se concretiza do que esconder um que custe dinheiro ao investidor.`;
 
 // ── Formatadores ──────────────────────────────────────────────────────────────
 const fmtBRL = v =>
@@ -363,7 +405,8 @@ function buildPrompt({ assets, lancamentos, currentAllocation, categoryValues, t
   lines.push('  - Para Ações: P/L, P/VP, ROE (%), DY, Dívida Líquida/EBITDA, Setor', '');
   lines.push('  - Para Cripto: Preço atual em BRL, Volatilidade (% mês), Tendência', '');
   lines.push('- **Condição atual:** Bom | Fraco | Neutro', '');
-  lines.push('- **Problemas identificados:** (vacância alta, dívida crescente, notícias ruins, prejuízo, etc)', '');
+  lines.push('- **🔍 Riscos ocultos:** investigue ATIVAMENTE os sinais de alerta da seção "DETECÇÃO DE RISCOS OCULTOS" do system prompt (value trap por P/L ou P/VP baixo demais, DY alto demais e por quê, dívida/vacância subindo, liquidez caindo, divergência do benchmark). Liste TODOS os encontrados — não esconda nada. Se não houver, escreva "Nenhum risco relevante detectado".', '');
+  lines.push('- **✅ VEREDITO (obrigatório):** escolha UMA opção em negrito — **✅ COMPRAR** | **⚠️ MANTER** | **❌ VENDER** | **🤔 CONSIDERE** — e justifique em 1 frase com dados.', '');
   lines.push('', '');
 
   lines.push('### [ETAPA 2] RELATÓRIO DE CONDIÇÃO ATUAL', '');
