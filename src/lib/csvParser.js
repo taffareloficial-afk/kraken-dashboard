@@ -34,8 +34,12 @@ function parseDate(dateStr) {
     return null;
   }
 
-  // Validação básica
-  if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 1 || month > 12) {
+  // Validação básica (inclui sanidade do ANO: evita typos como 0004 ou 2925
+  // que corrompem a ordenação cronológica e anulam vendas no cálculo de posição)
+  const currentYear = new Date().getFullYear();
+  if (isNaN(day) || isNaN(month) || isNaN(year) ||
+      day < 1 || day > 31 || month < 1 || month > 12 ||
+      year < 2000 || year > currentYear + 1) {
     return null;
   }
 
