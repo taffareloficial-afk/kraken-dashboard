@@ -567,11 +567,19 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
     const state      = {};   // ticker → { qty, cost }
     const tickerMeta = {};
 
+    // Sanitiza data p/ ordenação: ano inválido (typo tipo 0004/2925) ordena por
+    // ÚLTIMO em vez de bagunçar a cronologia (evita venda anular-se por sortear
+    // antes das compras). Torna o cálculo resiliente a dados corrompidos em cache.
+    const sortDate = (d) => {
+      const y = parseInt((d ?? '').slice(0, 4), 10);
+      return (isNaN(y) || y < 2000 || y > 2100) ? '9999-12-31' : d;
+    };
+
     lancamentos
       .filter(l => l.category === 'operacao')
       .slice()
       .sort((a, b) => {
-        const dd = (a.date ?? '').localeCompare(b.date ?? '');
+        const dd = sortDate(a.date).localeCompare(sortDate(b.date));
         if (dd !== 0) return dd;
         const at = a.type?.toLowerCase?.();
         const bt = b.type?.toLowerCase?.();
