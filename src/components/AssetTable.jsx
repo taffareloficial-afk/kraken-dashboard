@@ -246,8 +246,12 @@ function AssetRow({ asset, sparklines, portfolioTotal, isLast, onSelect, indent,
       <td className="col-tablet-hide" style={{ padding: '15px 16px', ...border }}>
         {(() => {
           const prices = sparklines[asset.ticker];
-          if (!prices || prices.length < 2) {
+          // undefined = ainda carregando · null/insuficiente = resolvido sem dados
+          if (prices === undefined) {
             return <div className="skeleton rounded" style={{ width: 80, height: 40 }} />;
+          }
+          if (!prices || prices.length < 2) {
+            return <span style={{ color: 'var(--c-tx4)', fontSize: 12 }}>—</span>;
           }
           const change30d = ((prices[prices.length - 1] - prices[0]) / prices[0]) * 100;
           const pos30d    = change30d >= 0;

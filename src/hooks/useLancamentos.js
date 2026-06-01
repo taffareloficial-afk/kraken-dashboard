@@ -560,23 +560,41 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
 
   // ── Derived state ──────────────────────────────────────────────────────────
   const adjustedPortfolio = useMemo(() => {
-    const deltas     = {};
-    const costs      = {};   // soma do custo (total) das compras — usado p/ preço médio
+    // Estado por ticker com PREÇO MÉDIO e redução PROPORCIONAL de custo na venda
+    // (igual a calcPMData). Sem isso, vender parte de uma posição não reduzia o
+    // custo → Renda Fixa exibia a soma de todas as compras (ex: CDB com 2 compras
+    // + 1 venda mostrava o valor das 2 compras em vez do remanescente).
+    const state      = {};   // ticker → { qty, cost }
     const tickerMeta = {};
 
     lancamentos
       .filter(l => l.category === 'operacao')
+      .slice()
+      .sort((a, b) => {
+        const dd = (a.date ?? '').localeCompare(b.date ?? '');
+        if (dd !== 0) return dd;
+        const at = a.type?.toLowerCase?.();
+        const bt = b.type?.toLowerCase?.();
+        if (at !== bt) return at === 'compra' ? -1 : 1; // compra antes da venda no mesmo dia
+        return (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
+      })
       .forEach(op => {
         const qty = parseFloat(op.quantity) || 0;
         const typeNorm = op.type?.toLowerCase?.();
-        const d   = typeNorm === 'compra' ? qty : -qty;
-        deltas[op.ticker] = (deltas[op.ticker] ?? 0) + d;
+        if (!state[op.ticker]) state[op.ticker] = { qty: 0, cost: 0 };
+        const s = state[op.ticker];
 
-        // Acumula custo das compras (para derivar preço médio de ativos
-        // sem cotação de mercado, como Renda Fixa)
         if (typeNorm === 'compra') {
           const total = parseFloat(op.total) || ((parseFloat(op.price) || 0) * qty);
-          costs[op.ticker] = (costs[op.ticker] ?? 0) + total;
+          s.qty  += qty;
+          s.cost += total;
+        } else if (typeNorm === 'venda') {
+          if (s.qty > 0) {
+            const fraction = Math.min(qty / s.qty, 1);
+            s.cost -= s.cost * fraction;   // reduz custo proporcionalmente
+          }
+          s.qty -= qty;
+          if (s.qty <= 0) { s.qty = 0; s.cost = 0; }  // posição zerada → reset
         }
 
         if (!tickerMeta[op.ticker] && op.assetType) {
@@ -587,6 +605,10 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
         }
       });
 
+    // deltas = quantidade líquida atual por ticker
+    const deltas = {};
+    for (const [ticker, s] of Object.entries(state)) deltas[ticker] = s.qty;
+
     const staticTickers = new Set(PORTFOLIO.map(p => p.ticker));
     const result = PORTFOLIO.map(item => ({
       ...item,
@@ -595,9 +617,10 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
 
     for (const [ticker, delta] of Object.entries(deltas)) {
       if (!staticTickers.has(ticker) && delta > 0 && tickerMeta[ticker]) {
-        // Preço médio = custo total / quantidade. Necessário para Renda Fixa,
-        // que não tem cotação de mercado (Yahoo/CoinGecko) e é avaliada pelo custo.
-        const avgPrice = costs[ticker] > 0 ? costs[ticker] / delta : 0;
+        // Preço médio = custo remanescente / quantidade. Para Renda Fixa
+        // (sem cotação de mercado) é o valor exibido na carteira.
+        const remainingCost = state[ticker]?.cost ?? 0;
+        const avgPrice = remainingCost > 0 ? remainingCost / delta : 0;
         result.push({
           ticker,
           shares: delta,

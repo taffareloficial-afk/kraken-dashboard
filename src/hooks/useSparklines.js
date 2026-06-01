@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 
+// ── Helpers ─────────────────────────────────────────────────────────────────
+// Aborta a requisição após `ms` para evitar promise pendente eterna (loading infinito).
+function fetchWithTimeout(url, ms = 8000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
+}
+
 // ── Fetchers ──────────────────────────────────────────────────────────────────
 async function fetchStockHistory(ticker) {
   const url =
     `/api/yahoo/v8/finance/chart/${ticker}.SA` +
     `?interval=1d&range=1mo&includePrePost=false`;
-  const res  = await fetch(url);
+  const res  = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Yahoo ${ticker}: ${res.status}`);
   const data = await res.json();
   const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close ?? [];
@@ -16,7 +24,7 @@ async function fetchCryptoHistory() {
   const url =
     '/api/coingecko/api/v3/coins/bitcoin/market_chart' +
     '?vs_currency=brl&days=30&interval=daily';
-  const res  = await fetch(url);
+  const res  = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`CoinGecko: ${res.status}`);
   const data = await res.json();
   return (data?.prices ?? []).map(([, price]) => price);
@@ -52,8 +60,20 @@ export function useSparklines(assets = []) {
     // Mark as started (before async work to avoid double-fetching)
     toFetch.forEach(a => fetchedRef.current.add(a.ticker));
 
+    // Renda Fixa não tem cotação de mercado (Yahoo/CoinGecko) — não busca,
+    // marca como `null` (resolvido sem dados) para a coluna 30d exibir "–".
+    const isRendaFixa = (a) =>
+      a.type === 'Renda Fixa' || /^(CDB|LCI|LCA|LFT|LF|RDB|LC|TESOURO)/i.test(a.ticker || '');
+
+    const marketAssets = toFetch.filter(a => !isRendaFixa(a));
+    const rfNulls = {};
+    toFetch.filter(isRendaFixa).forEach(a => { rfNulls[a.ticker] = null; });
+    if (Object.keys(rfNulls).length > 0) {
+      setSparklines(prev => ({ ...prev, ...rfNulls }));
+    }
+
     Promise.allSettled(
-      toFetch.map(async ({ ticker, type }) => {
+      marketAssets.map(async ({ ticker, type }) => {
         const prices = type === 'Cripto'
           ? await fetchCryptoHistory()
           : await fetchStockHistory(ticker);
@@ -61,15 +81,18 @@ export function useSparklines(assets = []) {
       })
     ).then(results => {
       const data = {};
-      results.forEach(r => {
+      results.forEach((r, i) => {
+        const ticker = marketAssets[i].ticker;
         if (r.status === 'rejected') {
-          console.warn('[useSparklines] fetch failed:', r.reason?.message);
-          return;
-        }
-        if (r.value.prices.length >= 2) {
-          data[r.value.ticker] = r.value.prices;
+          console.warn(`[useSparklines] ${ticker} falhou:`, r.reason?.message);
+          data[ticker] = null;              // resolvido sem dados → coluna mostra "–"
+        } else if (r.value.prices.length >= 2) {
+          data[ticker] = r.value.prices;    // dados ok
+        } else {
+          data[ticker] = null;              // sem histórico suficiente → "–"
         }
       });
+      // Sempre grava algo (dados ou null) para NUNCA deixar a coluna em loading eterno
       if (Object.keys(data).length > 0) {
         setSparklines(prev => ({ ...prev, ...data }));
       }
