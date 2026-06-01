@@ -89,7 +89,7 @@ function SkeletonCard() {
 
 function AssetCard({ asset, onSelect, sparkData, portfolioTotal, pm }) {
   const positive  = asset.changePercent >= 0;
-  const catColor  = CATEGORY_COLORS[asset.type] ?? '#8b949e';
+  const catColor  = CATEGORY_COLORS[asset.type] ?? 'var(--c-tx3)';
   const allocPct  = portfolioTotal > 0 ? (asset.totalValue / portfolioTotal * 100) : 0;
   const pmReturn  = pm != null && asset.price > 0 ? (asset.price - pm) / pm * 100 : null;
   const pmPos     = pmReturn != null && pmReturn >= 0;
@@ -105,7 +105,7 @@ function AssetCard({ asset, onSelect, sparkData, portfolioTotal, pm }) {
     >
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
-          <span className="mono font-bold" style={{ color: '#e6edf3', fontSize: 15 }}>
+          <span className="mono font-bold" style={{ color: 'var(--c-tx1)', fontSize: 15 }}>
             {asset.ticker}
           </span>
           <span style={{
@@ -116,7 +116,7 @@ function AssetCard({ asset, onSelect, sparkData, portfolioTotal, pm }) {
           </span>
         </div>
         <div style={{ fontSize: 12, color: '#484f58', display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span className="mono" style={{ color: '#8b949e', fontVariantNumeric: 'tabular-nums' }}>
+          <span className="mono" style={{ color: 'var(--c-tx3)', fontVariantNumeric: 'tabular-nums' }}>
             {fmtBRL(asset.price)}
           </span>
           <span>·</span>
@@ -138,7 +138,7 @@ function AssetCard({ asset, onSelect, sparkData, portfolioTotal, pm }) {
       </div>
 
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div className="mono font-semibold" style={{ color: '#e6edf3', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
+        <div className="mono font-semibold" style={{ color: 'var(--c-tx1)', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
           {fmtBRL(asset.totalValue)}
         </div>
         <div className="mono" style={{ color: positive ? '#3fb950' : '#f85149', fontSize: 12, marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>
@@ -153,7 +153,7 @@ function AssetCard({ asset, onSelect, sparkData, portfolioTotal, pm }) {
 
 function AssetRow({ asset, sparklines, portfolioTotal, isLast, onSelect, indent, pm }) {
   const positive = asset.changePercent >= 0;
-  const catColor = CATEGORY_COLORS[asset.type] ?? '#8b949e';
+  const catColor = CATEGORY_COLORS[asset.type] ?? 'var(--c-tx3)';
   const allocPct = portfolioTotal > 0 ? (asset.totalValue / portfolioTotal * 100) : 0;
   const rowBg    = indent ? '#080c11' : 'transparent';
   const border   = { borderBottom: isLast ? 'none' : '1px solid var(--c-b3)' };
@@ -172,7 +172,7 @@ function AssetRow({ asset, sparklines, portfolioTotal, isLast, onSelect, indent,
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="mono font-semibold" style={{ color: '#e6edf3', fontSize: 14 }}>
+              <span className="mono font-semibold" style={{ color: 'var(--c-tx1)', fontSize: 14 }}>
                 {asset.ticker}
               </span>
               <span className="row-actions" style={{
@@ -200,7 +200,7 @@ function AssetRow({ asset, sparklines, portfolioTotal, isLast, onSelect, indent,
 
       {/* Qtd */}
       <td className="col-tablet-hide" style={{ padding: '15px 16px', textAlign: 'right', ...border }}>
-        <span className="mono" style={{ color: '#8b949e', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
+        <span className="mono" style={{ color: 'var(--c-tx3)', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
           {asset.shares.toLocaleString('pt-BR')}
         </span>
       </td>
@@ -209,7 +209,7 @@ function AssetRow({ asset, sparklines, portfolioTotal, isLast, onSelect, indent,
       <td className="col-tablet-hide" style={{ padding: '15px 16px', textAlign: 'right', ...border }}>
         {pm != null ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-            <span className="mono" style={{ color: '#c9d1d9', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
+            <span className="mono" style={{ color: 'var(--c-tx2)', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
               {fmtBRL(pm)}
             </span>
             {pmReturn != null && (
@@ -225,7 +225,7 @@ function AssetRow({ asset, sparklines, portfolioTotal, isLast, onSelect, indent,
 
       {/* Preço */}
       <td style={{ padding: '15px 16px', textAlign: 'right', ...border }}>
-        <span className="mono" style={{ color: '#c9d1d9', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
+        <span className="mono" style={{ color: 'var(--c-tx2)', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
           {fmtBRL(asset.price)}
         </span>
       </td>
@@ -276,7 +276,7 @@ function AssetRow({ asset, sparklines, portfolioTotal, isLast, onSelect, indent,
       {/* % Carteira */}
       <td className="col-tablet-hide" style={{ padding: '15px 16px', textAlign: 'right', ...border }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <span className="mono" style={{ color: '#c9d1d9', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
+          <span className="mono" style={{ color: 'var(--c-tx2)', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
             {allocPct.toFixed(1)}%
           </span>
           <div style={{ width: 52, height: 3, background: '#161b22', borderRadius: 2, overflow: 'hidden' }}>
@@ -287,7 +287,7 @@ function AssetRow({ asset, sparklines, portfolioTotal, isLast, onSelect, indent,
 
       {/* Total */}
       <td style={{ padding: '15px 16px', textAlign: 'right', ...border }}>
-        <span className="mono font-semibold" style={{ color: '#e6edf3', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
+        <span className="mono font-semibold" style={{ color: 'var(--c-tx1)', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
           {fmtBRL(asset.totalValue)}
         </span>
       </td>
@@ -298,7 +298,7 @@ function AssetRow({ asset, sparklines, portfolioTotal, isLast, onSelect, indent,
 // ── Category group header row (grouped mode) ──────────────────────────────────
 
 function CategoryGroupHeader({ cat, assets, portfolioTotal, isExpanded, onToggle }) {
-  const color      = CATEGORY_COLORS[cat] ?? '#8b949e';
+  const color      = CATEGORY_COLORS[cat] ?? 'var(--c-tx3)';
   const groupTotal = assets.reduce((s, a) => s + a.totalValue, 0);
   const groupAlloc = portfolioTotal > 0 ? (groupTotal / portfolioTotal * 100) : 0;
   const dailyDelta = assets.reduce((s, a) => s + (a.change ?? 0) * a.shares, 0);
@@ -327,7 +327,7 @@ function CategoryGroupHeader({ cat, assets, portfolioTotal, isExpanded, onToggle
             : <ChevronRight size={14} color="var(--c-tx4)" style={{ flexShrink: 0 }} />
           }
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#e6edf3' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-tx1)' }}>
             {CATEGORY_ICONS[cat]} {cat}
           </span>
           <span style={{
@@ -344,7 +344,7 @@ function CategoryGroupHeader({ cat, assets, portfolioTotal, isExpanded, onToggle
             <span className="mono font-semibold" style={{ color, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
               {groupAlloc.toFixed(1)}%
             </span>
-            <span className="mono font-semibold" style={{ color: '#e6edf3', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
+            <span className="mono font-semibold" style={{ color: 'var(--c-tx1)', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
               {fmtBRL(groupTotal)}
             </span>
           </div>
@@ -432,7 +432,7 @@ export default function AssetTable({ assets, loading, onSelectAsset, lancamentos
         borderBottom: '1px solid var(--c-b2)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <h2 style={{ fontSize: 13, fontWeight: 600, color: '#8b949e' }}>Carteira</h2>
+          <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-tx3)' }}>Carteira</h2>
           {!loading && (
             <span style={{
               fontSize: 11, color: '#484f58',
@@ -484,7 +484,7 @@ export default function AssetTable({ assets, loading, onSelectAsset, lancamentos
       }}>
         {availableFilters.map(cat => {
           const active = activeCategory === cat;
-          const color  = cat === 'Todos' ? '#58a6ff' : (CATEGORY_COLORS[cat] ?? '#8b949e');
+          const color  = cat === 'Todos' ? '#58a6ff' : (CATEGORY_COLORS[cat] ?? 'var(--c-tx3)');
           return (
             <button
               key={cat}

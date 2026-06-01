@@ -78,7 +78,7 @@ function Badge({ type }) {
 function DeleteConfirm({ onConfirm, onCancel }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
-      <span style={{ fontSize: 11, color: '#8b949e' }}>Remover?</span>
+      <span style={{ fontSize: 11, color: 'var(--c-tx3)' }}>Remover?</span>
       <button
         className="btn-inline"
         onClick={onConfirm}
@@ -138,7 +138,7 @@ function ExpandedDetails({ l }) {
           <p style={{ fontSize: 10, color: '#484f58', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3, margin: '0 0 3px' }}>
             {lbl}
           </p>
-          <p style={{ fontSize: 13, color: '#c9d1d9', fontFamily: 'JetBrains Mono, monospace', margin: 0 }}>
+          <p style={{ fontSize: 13, color: 'var(--c-tx2)', fontFamily: 'JetBrains Mono, monospace', margin: 0 }}>
             {val}
           </p>
         </div>
@@ -164,9 +164,9 @@ function ExpandedDetails({ l }) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const SEL_STYLE = {
-  background: '#0d1117',
+  background: 'var(--c-s2)',
   border: '1px solid var(--c-b1)',
-  borderRadius: 8, color: '#8b949e',
+  borderRadius: 8, color: 'var(--c-tx2)',
   padding: '6px 10px', fontSize: 12,
   cursor: 'pointer', height: 34,
 };
@@ -188,7 +188,7 @@ const ICON_BTN = {
 const TH_STYLE = {
   padding: '10px 14px', textAlign: 'left',
   fontSize: 11, fontWeight: 700,
-  color: '#484f58', textTransform: 'uppercase',
+  color: 'var(--c-tx3)', textTransform: 'uppercase',
   letterSpacing: '0.07em', whiteSpace: 'nowrap',
   background: 'transparent',
 };
@@ -259,7 +259,7 @@ export default function HistoricoTable({ lancamentos, onRemove, onEdit }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Filter size={14} color="var(--c-tx4)" />
-            <h2 style={{ fontSize: 14, fontWeight: 600, color: '#e6edf3', margin: 0 }}>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--c-tx1)', margin: 0 }}>
               Histórico de Lançamentos
             </h2>
             <span style={{
@@ -349,7 +349,7 @@ export default function HistoricoTable({ lancamentos, onRemove, onEdit }) {
       {filtered.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 0', gap: 8 }}>
           <span style={{ fontSize: 32 }}>📋</span>
-          <p style={{ color: '#8b949e', fontSize: 14, margin: 0 }}>Nenhum lançamento encontrado</p>
+          <p style={{ color: 'var(--c-tx3)', fontSize: 14, margin: 0 }}>Nenhum lançamento encontrado</p>
           <p style={{ color: '#484f58', fontSize: 12, margin: 0 }}>
             {lancamentos.length === 0
               ? 'Use o botão + Adicionar Lançamento para começar'
@@ -380,13 +380,15 @@ export default function HistoricoTable({ lancamentos, onRemove, onEdit }) {
                 const isExpanded = expandedId === l.id;
                 const confirming = confirmId  === l.id;
                 const isOdd      = i % 2 === 1;
-                const rowBg      = isOdd ? '#0f141a' : 'transparent';
+                // Overlay neutro (cinza translúcido) funciona em dark E light,
+                // sem invisibilizar o texto (antes usava #0f141a, escuro fixo).
+                const rowBg      = isOdd ? 'rgba(127,127,127,0.06)' : 'transparent';
 
                 // Total & color
                 const totalVal   = isOp ? +(l.total ?? l.price * l.quantity) : +l.amount;
                 const tc         = typeCfg(l.type);
                 const totalColor = isOp
-                  ? (l.type === 'compra' ? '#8b949e' : '#3fb950')  // compra=neutral, venda=green
+                  ? (l.type === 'compra' ? 'var(--c-tx2)' : '#3fb950')  // compra=neutral, venda=green
                   : tc.color;                                        // provento=accent
                 const prefix = (isOp && l.type !== 'compra') ? '+' : ''; // no sign for compra
 
@@ -394,12 +396,12 @@ export default function HistoricoTable({ lancamentos, onRemove, onEdit }) {
                   <React.Fragment key={l.id}>
                     <tr
                       style={{ background: rowBg }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#1c2128'; }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(127,127,127,0.12)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = rowBg; }}
                     >
                       {/* Data */}
                       <td style={{ ...TD_STYLE, whiteSpace: 'nowrap', paddingLeft: 16 }}>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#c9d1d9' }}>
+                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--c-tx2)' }}>
                           {fmtDate(l.date)}
                         </span>
                       </td>
@@ -416,7 +418,7 @@ export default function HistoricoTable({ lancamentos, onRemove, onEdit }) {
 
                       {/* Ativo */}
                       <td style={TD_STYLE}>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: 14, color: '#e6edf3' }}>
+                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: 14, color: 'var(--c-tx1)' }}>
                           {l.ticker}
                         </span>
                         {l.assetName && l.assetName !== l.ticker && (
@@ -428,14 +430,14 @@ export default function HistoricoTable({ lancamentos, onRemove, onEdit }) {
 
                       {/* Qtd / Valor — hidden on mobile */}
                       <td className="hist-col-md-hide" style={TD_STYLE}>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#8b949e' }}>
+                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--c-tx2)' }}>
                           {isOp ? (+l.quantity).toLocaleString('pt-BR') : fmtBRL(+l.amount)}
                         </span>
                       </td>
 
                       {/* Preço unit. — hidden on mobile + tablet */}
                       <td className="hist-col-lg-hide" style={TD_STYLE}>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#8b949e' }}>
+                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: 'var(--c-tx2)' }}>
                           {isOp ? fmtBRL(+l.price) : '—'}
                         </span>
                       </td>
@@ -469,7 +471,7 @@ export default function HistoricoTable({ lancamentos, onRemove, onEdit }) {
                               onClick={() => setExpandedId(isExpanded ? null : l.id)}
                               title={isExpanded ? 'Recolher' : 'Ver detalhes'}
                               style={ICON_BTN}
-                              onMouseEnter={e => { e.currentTarget.style.background = '#21262d'; e.currentTarget.style.color = '#c9d1d9'; }}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#21262d'; e.currentTarget.style.color = 'var(--c-tx2)'; }}
                               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#484f58'; }}
                             >
                               {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
