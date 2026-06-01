@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { KRAKEN_MODEL, CATEGORY_COLORS, CATEGORY_ICONS } from '../constants';
-import { calcPMData, calcTWR } from '../utils/portfolio';
+import { calcPMData } from '../utils/portfolio';
 import { useIsDark } from '../ThemeContext';
 import PatrimonioChart from './PatrimonioChart';
 
@@ -594,13 +594,20 @@ export default function ResumoTab({
   const totalInvested  = financialData?.totalInvestido ?? 0;
   const gcNaoRealizado = financialData?.gcNaoRealizado ?? null;
   const totalProventos = proventosStats?.totalGeral    ?? 0;
+  // Lucro Total = ganho de capital (Σ preço atual×qtd − PM×qtd) + proventos.
+  // O ganho de capital respeita valores negativos (ativos abaixo do PM).
   const lucroTotal     = financialData != null ? financialData.gcNaoRealizado + totalProventos : null;
-  const rentabilidade  = useMemo(
-    () => (financialData != null && totalValue > 0
-      ? calcTWR(lancamentos, totalValue, totalProventos)
-      : null),
-    [financialData, lancamentos, totalValue, totalProventos]
-  );
+
+  // Variação TOTAL acumulada (só capital): (valor atual − investido) / investido
+  const variacaoTotal  = (financialData != null && totalInvested > 0)
+    ? (gcNaoRealizado / totalInvested) * 100
+    : null;
+
+  // Rentabilidade = Lucro Total (capital + proventos) / Total Investido
+  const rentabilidade  = (financialData != null && totalInvested > 0)
+    ? (lucroTotal / totalInvested) * 100
+    : null;
+
   const dailyPct       = totalValue > 0 ? dailyPnL / Math.max(totalValue - dailyPnL, 1) * 100 : 0;
 
   // ── Category stats ─────────────────────────────────────────────────────
@@ -685,10 +692,10 @@ export default function ResumoTab({
         {/* Variação + Rentabilidade (side-by-side) */}
         <DualMetricCard
           label1="Variação"
-          main1={fmtPct(dailyPct)}
-          mainColor1={getNumberColor(dailyPct, 'value')}
-          icon1={dailyPct >= 0 ? TrendingUp : TrendingDown}
-          iconColor1={dailyPct >= 0 ? '#00AA44' : '#EE3333'}
+          main1={noBuyData ? null : fmtPct(variacaoTotal)}
+          mainColor1={noBuyData ? getNumberColor(null, 'neutral') : getNumberColor(variacaoTotal, 'value')}
+          icon1={(variacaoTotal ?? 0) >= 0 ? TrendingUp : TrendingDown}
+          iconColor1={(variacaoTotal ?? 0) >= 0 ? '#00AA44' : '#EE3333'}
           label2="Rentabilidade"
           main2={noBuyData ? null : fmtPct(rentabilidade)}
           mainColor2={noBuyData ? getNumberColor(null, 'neutral') : getNumberColor(rentabilidade, 'value')}

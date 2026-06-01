@@ -14,10 +14,18 @@ import { KRAKEN_MODEL } from '../constants';
  *   totalInvestido = pm × qtyAtual (custo da posição aberta)
  *   gcRealizado    = ganho de capital já realizado nas vendas
  */
+// Data com ano inválido (typo 0004/2925) ordena por último em vez de bagunçar
+// a cronologia (senão uma venda com data corrompida se anula). Mantém o PM
+// consistente com adjustedPortfolio, mesmo com dado antigo em cache.
+const safeSortDate = (d) => {
+  const y = parseInt((d ?? '').slice(0, 4), 10);
+  return (isNaN(y) || y < 2000 || y > 2100) ? '9999-12-31' : d;
+};
+
 export function calcPMData(lancamentos) {
   const ops = (lancamentos ?? [])
     .filter(l => l.category === 'operacao' && (l.type?.toLowerCase?.() === 'compra' || l.type?.toLowerCase?.() === 'venda'))
-    .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+    .sort((a, b) => safeSortDate(a.date).localeCompare(safeSortDate(b.date)));
 
   const state = {}; // ticker → { qty, cost, gcRealizado }
 
