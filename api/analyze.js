@@ -457,6 +457,15 @@ function buildPrompt({ assets, lancamentos, currentAllocation, categoryValues, t
   lines.push('- **Quantidade:** X cotas [quantidade específica, NÃO "alguns" ou "quanto puder"]', '');
   lines.push('', '');
 
+  lines.push('#### [3C] TROCAS / UPGRADES DE CARTEIRA (vender um ativo para comprar outro MELHOR)', '');
+  lines.push('🔄 Conecte venda + compra quando fizer sentido. Se um ativo que o investidor JÁ TEM é apenas mediano (veredito ⚠️ MANTER ou pior) E existe uma alternativa CLARAMENTE SUPERIOR na MESMA categoria, recomende uma TROCA explícita: "venda X → compre Y". Mas siga regras rígidas para NÃO gerar giro desnecessário:', '');
+  lines.push('- **Qualidade DURADOURA, não momentânea:** o ativo novo precisa ser superior de forma SUSTENTÁVEL no longo prazo — fundamentos consistentes ao longo de ANOS (histórico de DY, vacância, P/VP, ROE no tempo), vantagem competitiva real e gestão comprovada. NÃO recomende trocar por algo que só está barato/quente neste mês. Verifique o histórico, não um único trimestre.', '');
+  lines.push('- **A melhora precisa COMPENSAR os custos da troca:** ao vender, considere o IR sobre o lucro (se houver ganho — informe o valor estimado), corretagem/spread e o tempo fora do mercado. Só recomende a troca se o upgrade for grande o bastante para superar esses custos. Proventos de FIIs e vendas de ações até R$20k/mês são isentos — use isso a favor.', '');
+  lines.push('- **NÃO troque um ativo BOM (✅) por um marginalmente melhor.** Trocas só valem para sair de algo medíocre rumo a algo NITIDAMENTE superior. Vantagem pequena NÃO justifica giro — nesse caso, mande manter.', '');
+  lines.push('- **Formato da troca:** "🔄 VENDER [X] (motivo: fraco em tal indicador, com número) → COMPRAR [Y]". Mostre o impacto líquido esperado com números (ex: "DY sobe de 8% para 11%, P/VP cai de 1,10 para 0,90; custo de IR estimado ~R$X; mesma categoria, então não desbalanceia").', '');
+  lines.push('- Se NÃO houver nenhuma troca que realmente valha a pena, escreva "Nenhuma troca recomendada agora" — nunca invente uma só para parecer ativo.', '');
+  lines.push('', '');
+
   lines.push('---', '');
   lines.push('## INSTRUÇÕES DETALHADAS', '');
   lines.push('', '');
