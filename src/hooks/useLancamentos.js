@@ -329,6 +329,29 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
         console.log(`[Kraken Sync] ✓ Passo 4b: ${toDownload.length} item(s) adicionados`);
       }
 
+      // ── Passo 4d: UPDATE LOCAL — registros que existem nos dois lados mas
+      //    mudaram na nuvem (ex: correção feita direto no Supabase). Nuvem vence.
+      //    Sem isso, edições na nuvem nunca chegavam ao cache (o sync só baixava
+      //    IDs novos), exigindo limpar o localStorage manualmente.
+      {
+        const sig = (l) =>
+          `${l.ticker}|${l.type}|${l.date}|${l.price}|${l.quantity}|${l.amount}|${l.total}|${l.category}`;
+        const cloudById = new Map(cloudItems.map(i => [i.id, i]));
+        const baseLocal = lancamentosRef.current;
+        const toUpdate  = baseLocal.filter(l => cloudById.has(l.id) && sig(cloudById.get(l.id)) !== sig(l));
+        if (toUpdate.length > 0) {
+          console.log(`[Kraken Sync] Passo 4d: atualizando ${toUpdate.length} registro(s) alterados na nuvem...`);
+          toUpdate.forEach(l => console.log(`  ✎ id=${l.id} ticker=${l.ticker}`));
+          const updIds = new Set(toUpdate.map(l => l.id));
+          const reconciled = baseLocal.map(l => updIds.has(l.id) ? cloudById.get(l.id) : l);
+          applyingSnapshot.current = true;
+          setLancamentos(reconciled);
+          persist(reconciled);
+          applyingSnapshot.current = false;
+          console.log(`[Kraken Sync] ✓ Passo 4d: ${toUpdate.length} registro(s) atualizados da nuvem`);
+        }
+      }
+
       // ── Passo 4c: UPLOAD — itens locais novos que faltam na nuvem ────────────
       if (toUpload.length > 0) {
         console.log(`[Kraken Sync] Passo 4c: enviando ${toUpload.length} item(s) ao Supabase...`);
