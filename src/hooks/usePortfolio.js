@@ -54,6 +54,42 @@ async function fetchBitcoin(attempt = 0) {
   throw new Error(`CoinGecko: ${res.status}`);
 }
 
+// CDI diário (BCB série 12, % ao dia) — usado para render Renda Fixa pós-fixada.
+// A série 12 limita "ultimos" a 20 valores, então usamos intervalo por data.
+async function fetchCDIDaily() {
+  const from = new Date();
+  from.setDate(from.getDate() - 400);   // cobre aplicações de até ~13 meses
+  const dd = String(from.getDate()).padStart(2, '0');
+  const mm = String(from.getMonth() + 1).padStart(2, '0');
+  const yyyy = from.getFullYear();
+  const res = await fetch(`/api/bcb/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=${dd}/${mm}/${yyyy}`);
+  if (!res.ok) throw new Error(`BCB CDI: ${res.status}`);
+  const data = await res.json();
+  return (Array.isArray(data) ? data : [])
+    .map(d => {
+      const [dia, mes, ano] = (d.data || '').split('/');
+      return { date: `${ano}-${mes}-${dia}`, pct: parseFloat(d.valor) };
+    })
+    .filter(d => !isNaN(d.pct));
+}
+
+/**
+ * Fator de juros pós-fixado: Π(1 + cdiDia/100 × taxa) para os dias úteis a partir
+ * da aplicação (inclusive, igual ao Investidor10) até hoje.
+ * taxa = fração do CDI (1 = 100% CDI).
+ */
+function rfAccrualFactor(sinceDate, cdiDaily, taxa = 1) {
+  if (!sinceDate || !cdiDaily?.length) return 1;
+  const today = new Date().toISOString().slice(0, 10);
+  let factor = 1;
+  for (const d of cdiDaily) {
+    if (d.date >= sinceDate && d.date <= today) {
+      factor *= 1 + (d.pct / 100) * taxa;
+    }
+  }
+  return factor;
+}
+
 export function usePortfolio(portfolio) {
   const [assets, setAssets]         = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -66,6 +102,8 @@ export function usePortfolio(portfolio) {
   // Último preço de BTC bem-sucedido — usado como fallback se a CoinGecko
   // retornar 429 (rate-limit) num refresh, evitando faixa de erro e valor zerado.
   const lastBtcRef                  = useRef({ price: 0, change: 0 });
+  // Cache do CDI diário (BCB) — usado para render Renda Fixa pós-fixada.
+  const cdiDailyRef                 = useRef([]);
 
   // Stable callback — no deps, reads portfolioRef inside
   const fetchAll = useCallback(async () => {
@@ -88,10 +126,16 @@ export function usePortfolio(portfolio) {
         .map(a => a.ticker);
       // Buscas resilientes: uma falha (ex: CoinGecko 429) não derruba a outra
       // nem dispara faixa de erro global.
-      const [yahooResults, btcData] = await Promise.all([
+      const hasRendaFixa = rendaFixaTickers.size > 0;
+      const [yahooResults, btcData, cdiDaily] = await Promise.all([
         fetchAllYahoo(stockTickers).catch(e => { console.warn('[Yahoo] falhou:', e?.message); return []; }),
         fetchBitcoin().catch(e => { console.warn('[CoinGecko] BTC indisponível (mantendo último preço):', e?.message); return null; }),
+        hasRendaFixa
+          ? fetchCDIDaily().catch(e => { console.warn('[BCB CDI] indisponível:', e?.message); return cdiDailyRef.current; })
+          : Promise.resolve(cdiDailyRef.current),
       ]);
+      if (cdiDaily?.length) cdiDailyRef.current = cdiDaily;
+      const cdi = cdiDailyRef.current;
 
       // BTC: usa o preço novo se veio; senão mantém o último conhecido (sem zerar)
       let btcPrice  = btcData?.bitcoin?.brl ?? 0;
@@ -116,17 +160,21 @@ export function usePortfolio(portfolio) {
           };
         }
         // Renda Fixa: sem cotação de mercado (CDB/LCI não existem no Yahoo).
-        // Avalia pelo custo: preço médio (item.price vindo do adjustedPortfolio)
-        // × quantidade. Rentabilidade 0% até modelarmos os juros do indexador.
+        // Valoriza pelo custo + juros pós-fixados do CDI (100% CDI por padrão),
+        // capitalizados dia a dia desde a aplicação — igual ao Investidor10.
         if (item.type === 'Renda Fixa') {
-          const rfPrice = Number(item.price) || 0; // preço médio (custo/qtd)
+          const principal = Number(item.price) || 0;        // PM = principal por unidade
+          const taxa      = Number(item.taxaCDI) || 1;       // fração do CDI (default 100%)
+          const factor    = rfAccrualFactor(item.sinceDate, cdi, taxa);
+          const rfPrice   = principal * factor;              // valor atual com juros
+          const lastCdi   = cdi.length ? cdi[cdi.length - 1].pct : 0;
           return {
             ...item,
             price:         rfPrice,
-            changePercent: 0,
-            change:        0,
+            changePercent: lastCdi,                          // rendimento do dia (CDI)
+            change:        rfPrice * (lastCdi / 100),
             totalValue:    rfPrice * item.shares,
-            prevClose:     rfPrice,
+            prevClose:     principal,                        // base = custo (rentab. desde a aplicação)
             high: 0, low: 0, volume: 0,
           };
         }

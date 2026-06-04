@@ -588,6 +588,7 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
     // custo → Renda Fixa exibia a soma de todas as compras (ex: CDB com 2 compras
     // + 1 venda mostrava o valor das 2 compras em vez do remanescente).
     const state      = {};   // ticker → { qty, cost }
+    const firstBuy   = {};   // ticker → data da compra mais antiga (p/ juros de Renda Fixa)
     const tickerMeta = {};
 
     // Sanitiza data p/ ordenação: ano inválido (typo tipo 0004/2925) ordena por
@@ -619,6 +620,9 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
           const total = parseFloat(op.total) || ((parseFloat(op.price) || 0) * qty);
           s.qty  += qty;
           s.cost += total;
+          if (op.date && (!firstBuy[op.ticker] || op.date < firstBuy[op.ticker])) {
+            firstBuy[op.ticker] = op.date;
+          }
         } else if (typeNorm === 'venda') {
           if (s.qty > 0) {
             const fraction = Math.min(qty / s.qty, 1);
@@ -658,6 +662,7 @@ export function useLancamentos(userId = null, syncBackend = 'firebase') {
           type:   tickerMeta[ticker].type,
           name:   tickerMeta[ticker].name,
           price:  avgPrice,
+          sinceDate: firstBuy[ticker] ?? null,  // data da aplicação (juros de Renda Fixa)
         });
       }
     }
