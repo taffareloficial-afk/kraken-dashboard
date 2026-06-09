@@ -14,6 +14,7 @@ import {
   TrendingUp, ChevronRight,
 } from 'lucide-react';
 import { CATEGORY_COLORS } from '../constants';
+import { classifyTicker } from '../utils/assetClass';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -457,9 +458,17 @@ export default function ProventosProximos({ rows, loading, error, lastFetch, ref
   // da data-ex já ter passado. Inclui proventos já-ex que ainda vão pagar e
   // exclui os já pagos. Fallback para data-ex quando não há data de pagamento.
   const todayStr = new Date().toISOString().slice(0, 10);
-  const futureRows = rows.filter(r =>
-    r.dataPagamento ? r.dataPagamento >= todayStr : r.isFuture
-  );
+  const futureRows = rows.filter(r => {
+    const paymentPending = r.dataPagamento ? r.dataPagamento >= todayStr : r.isFuture;
+    if (!paymentPending) return false;
+    // O pagamento estimado por offset (data-ex + N dias) só é confiável para
+    // FIIs, que pagam em ciclo mensal regular. Para ações/ETFs o intervalo
+    // ex→pagamento é irregular (JCP diferido), então só aceitamos quando a
+    // data-ex ainda é futura — um evento real, não um pagamento "chutado"
+    // sobre provento já anunciado (ex.: micro-JCP do ITSA4 datado em 01/06).
+    if (r.isFuture) return true;
+    return classifyTicker(r.ticker) === 'FII';
+  });
 
   // ── Recentes: lançamentos diretos — sem matching com calendário ───────────
   // Mostra todos os lançamentos do usuário com category='provento' e tipo

@@ -8,11 +8,14 @@ const TIPO_MAP = {
   BBSE3:  'Dividendo',
 };
 
-// Estimated days between ex-date and payment — fallback to 11
+// Dias entre a data do evento Yahoo (ancorada no 1º dia do mês) e o pagamento.
+// Calibrado com a fonte de verdade (Investidor10): TRXF/HGLG/VISC pagam 15/06
+// (offset 14 a partir de 01/06); KNCR paga 12/06 (offset 11). Fallback 11.
 const PAY_OFFSET_DAYS = {
-  TRXF11: 11,
-  HGLG11: 11,
-  VISC11:  11,
+  TRXF11: 14,
+  HGLG11: 14,
+  VISC11: 14,
+  KNCR11: 11,
   BBSE3:   3,
 };
 
