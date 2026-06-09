@@ -422,8 +422,43 @@ function EmptyState({ label }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+const PERIODO_OPTIONS = [
+  { key: 'todos',       label: 'Todos'        },
+  { key: 'este_mes',    label: 'Este mês'     },
+  { key: 'proximo_mes', label: 'Próximo mês'  },
+  { key: '3m',          label: '3 meses'      },
+  { key: '6m',          label: '6 meses'      },
+  { key: '12m',         label: '12 meses'     },
+];
+
+function filterByPeriodo(rows, periodo) {
+  if (periodo === 'todos') return rows;
+  const now   = new Date();
+  const year  = now.getFullYear();
+  const month = now.getMonth(); // 0-indexed
+
+  return rows.filter(r => {
+    const dateStr = r.dataPagamento || r.dataEx;
+    if (!dateStr) return periodo === 'todos';
+    const d = new Date(dateStr + 'T12:00:00');
+
+    if (periodo === 'este_mes')
+      return d.getFullYear() === year && d.getMonth() === month;
+
+    if (periodo === 'proximo_mes') {
+      const nm = new Date(year, month + 1, 1);
+      return d.getFullYear() === nm.getFullYear() && d.getMonth() === nm.getMonth();
+    }
+
+    const months = periodo === '3m' ? 3 : periodo === '6m' ? 6 : 12;
+    const limit  = new Date(year, month + months + 1, 0); // last day of target month
+    return d >= now && d <= limit;
+  });
+}
+
 export default function ProventosProximos({ rows, loading, error, lastFetch, refresh, adjustedPortfolio = [], lancamentos = [] }) {
-  const [tab, setTab] = useState('proximos'); // 'proximos' | 'recentes'
+  const [tab, setTab]             = useState('proximos'); // 'proximos' | 'recentes'
+  const [periodo, setPeriodo]     = useState('todos');
 
   // ticker → number of shares the user currently holds
   const sharesMap = Object.fromEntries(
@@ -464,7 +499,13 @@ export default function ProventosProximos({ rows, loading, error, lastFetch, ref
     }))
     .sort((a, b) => b.date.localeCompare(a.date));
 
-  const activeRows = tab === 'proximos' ? futureRows : [];
+  const filteredFutureRows = filterByPeriodo(futureRows, periodo);
+  const activeRows = tab === 'proximos' ? filteredFutureRows : [];
+
+  const totalEstimado = activeRows.reduce((sum, row) => {
+    const qty = sharesMap[row.ticker] ?? 0;
+    return sum + (qty > 0 ? row.valor * qty : row.valor);
+  }, 0);
 
   const COLS = [
     { label: 'Ativo',      align: 'left',  tabletHide: false, width: '12%' },
@@ -570,6 +611,40 @@ export default function ProventosProximos({ rows, loading, error, lastFetch, ref
         })}
       </div>
 
+      {/* ── Filtro de período (só na aba Próximos) ──────────────────────── */}
+      {tab === 'proximos' && (
+        <div style={{
+          display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6,
+          padding: '10px 20px',
+          borderBottom: '1px solid var(--c-b2)',
+          background: 'var(--c-bg)',
+        }}>
+          {PERIODO_OPTIONS.map(opt => {
+            const active = periodo === opt.key;
+            return (
+              <button
+                key={opt.key}
+                onClick={() => setPeriodo(opt.key)}
+                className="btn-inline"
+                style={{
+                  padding: '4px 12px',
+                  borderRadius: 6,
+                  fontSize: 11, fontWeight: active ? 700 : 400,
+                  background: active ? '#1c3a5a' : 'var(--c-b2)',
+                  color:      active ? '#58a6ff' : 'var(--c-tx3)',
+                  border:     `1px solid ${active ? '#3b82f660' : 'var(--c-b1)'}`,
+                  cursor: 'pointer',
+                  transition: 'background 0.12s, color 0.12s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── Error ───────────────────────────────────────────────────────── */}
       {error && (
         <div style={{
@@ -588,7 +663,7 @@ export default function ProventosProximos({ rows, loading, error, lastFetch, ref
           Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
         ) : tab === 'proximos' ? (
           activeRows.length === 0
-            ? <EmptyState label="Nenhum provento futuro estimado no momento" />
+            ? <EmptyState label={periodo === 'todos' ? 'Nenhum provento futuro estimado no momento' : `Nenhum provento estimado para ${PERIODO_OPTIONS.find(o => o.key === periodo)?.label.toLowerCase()}`} />
             : activeRows.map((row, i) => (
                 <ProventoCard
                   key={`${row.ticker}-${row.dataEx}-${i}`}
@@ -656,7 +731,7 @@ export default function ProventosProximos({ rows, loading, error, lastFetch, ref
               Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)
             ) : tab === 'proximos' ? (
               activeRows.length === 0
-                ? <tr><td colSpan={7}><EmptyState label="Nenhum provento futuro estimado no momento" /></td></tr>
+                ? <tr><td colSpan={7}><EmptyState label={periodo === 'todos' ? 'Nenhum provento futuro estimado no momento' : `Nenhum provento estimado para ${PERIODO_OPTIONS.find(o => o.key === periodo)?.label.toLowerCase()}`} /></td></tr>
                 : activeRows.map((row, i) => (
                     <ProventoRow
                       key={`${row.ticker}-${row.dataEx}-${i}`}
@@ -689,26 +764,41 @@ export default function ProventosProximos({ rows, loading, error, lastFetch, ref
           padding: '10px 20px',
           borderTop: '1px solid var(--c-b2)',
         }}>
-          {/* Urgency legend */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-            {[
-              { color: '#f85149', label: '≤7d' },
-              { color: '#f59e0b', label: '≤15d' },
-              { color: '#3fb950', label: '≤30d' },
-              { color: '#3b82f6', label: '≤60d' },
-            ].map(({ color, label }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
-                <span style={{ fontSize: 10, color: '#484f58' }}>{label}</span>
+          {tab === 'proximos' ? (
+            <>
+              {/* Urgency legend */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                {[
+                  { color: '#f85149', label: '≤7d' },
+                  { color: '#f59e0b', label: '≤15d' },
+                  { color: '#3fb950', label: '≤30d' },
+                  { color: '#3b82f6', label: '≤60d' },
+                ].map(({ color, label }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
+                    <span style={{ fontSize: 10, color: '#484f58' }}>{label}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <TrendingUp size={10} color="var(--c-tx4)" />
-            <span style={{ fontSize: 10, color: '#484f58' }}>
-              Datas estimadas com base no histórico · valor total = R$/cota × quantidade de cotas
-            </span>
-          </div>
+              {/* Total estimado do período */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <TrendingUp size={11} color="#3fb950" />
+                <span style={{ fontSize: 11, color: '#484f58' }}>
+                  Total estimado{periodo !== 'todos' ? ` (${PERIODO_OPTIONS.find(o => o.key === periodo)?.label.toLowerCase()})` : ''}:
+                </span>
+                <span className="mono font-bold" style={{ fontSize: 13, color: '#3fb950', fontVariantNumeric: 'tabular-nums' }}>
+                  {fmtBRLTotal(totalEstimado)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <TrendingUp size={10} color="var(--c-tx4)" />
+              <span style={{ fontSize: 10, color: '#484f58' }}>
+                Proventos registrados via lançamentos · últimos 12 meses
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>
