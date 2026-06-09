@@ -70,30 +70,20 @@ function TipoBadge({ tipo }) {
 
 // ── Status cell ───────────────────────────────────────────────────────────────
 
-function StatusBadge({ isFuture, isProjected, dataEx, dataPagamento }) {
-  const days = daysUntil(dataEx);
-
-  if (!isFuture) {
-    const confirmed = !isProjected;
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <CheckCircle size={12} color={confirmed ? '#3fb950' : '#f59e0b'} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: confirmed ? '#3fb950' : '#f59e0b' }}>
-            {confirmed ? 'Confirmado' : 'Est. Pago'}
-          </span>
-        </div>
-        {dataPagamento && (
-          <span className="mono" style={{ fontSize: 10, color: '#484f58' }}>
-            pag. {fmtDate(dataPagamento)}
-          </span>
-        )}
-      </div>
-    );
-  }
-
+function StatusBadge({ isProjected, dataEx, dataPagamento }) {
+  // Aba Próximos: o provento ainda NÃO foi recebido (pagamento >= hoje).
+  // A contagem é até a DATA DE PAGAMENTO — não a data-ex (que pode já ter
+  // passado). Nunca rotular como "Confirmado/Pago" antes do pagamento.
+  const refDate = dataPagamento || dataEx;
+  const days = daysUntil(refDate);
   const { color, label } = urgencyConfig(days);
-  const urgent = days !== null && days <= 7;
+
+  const text =
+    days === null ? 'A receber'
+    : days <= 0   ? 'Recebe hoje'
+    : days === 1  ? 'Recebe amanhã'
+    : `a receber em ${label}`;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -102,12 +92,12 @@ function StatusBadge({ isFuture, isProjected, dataEx, dataPagamento }) {
           : <Clock      size={12} color={color} />
         }
         <span style={{ fontSize: 12, fontWeight: 600, color }}>
-          {days === 0 ? 'Hoje' : days === 1 ? 'Amanhã' : `em ${label}`}
+          {text}
         </span>
       </div>
       {dataPagamento && (
         <span className="mono" style={{ fontSize: 10, color: '#484f58' }}>
-          pag. {fmtDate(dataPagamento)}
+          {isProjected ? 'est. pag. ' : 'pag. '}{fmtDate(dataPagamento)}
         </span>
       )}
     </div>
@@ -146,8 +136,8 @@ function SkeletonCard() {
 // ── Mobile card ───────────────────────────────────────────────────────────────
 
 function ProventoCard({ row, shares, recordedAmount, isLast }) {
-  const days      = daysUntil(row.dataEx);
-  const urg       = row.isFuture ? urgencyConfig(days) : { color: row.isProjected ? '#f59e0b' : '#3fb950', bg: '#0d2c1a' };
+  const days      = daysUntil(row.dataPagamento || row.dataEx);
+  const urg       = urgencyConfig(days);
   const qty       = shares ?? 0;
   // Recentes: use real recorded amount when available; Próximos: estimate
   const displayValue = recordedAmount != null
@@ -195,7 +185,6 @@ function ProventoCard({ row, shares, recordedAmount, isLast }) {
           )}
         </div>
         <StatusBadge
-          isFuture={row.isFuture}
           isProjected={row.isProjected}
           dataEx={row.dataEx}
           dataPagamento={row.dataPagamento}
@@ -208,8 +197,8 @@ function ProventoCard({ row, shares, recordedAmount, isLast }) {
 // ── Desktop table row ─────────────────────────────────────────────────────────
 
 function ProventoRow({ row, shares, recordedAmount, idx, isLast }) {
-  const days    = daysUntil(row.dataEx);
-  const urg     = row.isFuture ? urgencyConfig(days) : { color: row.isProjected ? '#f59e0b' : '#3fb950', bg: '#0d2c1a' };
+  const days    = daysUntil(row.dataPagamento || row.dataEx);
+  const urg     = urgencyConfig(days);
   const zebraBg = idx % 2 === 1 ? '#080c11' : 'transparent';
   const border  = { borderBottom: isLast ? 'none' : '1px solid var(--c-b3)' };
   const qty     = shares ?? 0;
@@ -299,7 +288,6 @@ function ProventoRow({ row, shares, recordedAmount, idx, isLast }) {
       {/* Status */}
       <td style={{ padding: '15px 16px', ...border }}>
         <StatusBadge
-          isFuture={row.isFuture}
           isProjected={row.isProjected}
           dataEx={row.dataEx}
           dataPagamento={row.dataPagamento}
