@@ -465,7 +465,13 @@ export default function ProventosProximos({ rows, loading, error, lastFetch, ref
     adjustedPortfolio.map(a => [a.ticker, a.shares ?? 0])
   );
 
-  const futureRows = rows.filter(r => r.isFuture);
+  // "Próximo" = pagamento ainda não ocorreu (pagamento >= hoje), independente
+  // da data-ex já ter passado. Inclui proventos já-ex que ainda vão pagar e
+  // exclui os já pagos. Fallback para data-ex quando não há data de pagamento.
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const futureRows = rows.filter(r =>
+    r.dataPagamento ? r.dataPagamento >= todayStr : r.isFuture
+  );
 
   // ── Recentes: lançamentos diretos — sem matching com calendário ───────────
   // Mostra todos os lançamentos do usuário com category='provento' e tipo
