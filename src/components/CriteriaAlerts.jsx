@@ -8,7 +8,7 @@
  * P/VP, vacância, dívida e recuperação judicial não têm fonte local — ficam
  * a cargo da Análise IA; isso é declarado no rodapé do card.
  */
-import { Bell, AlertOctagon, AlertTriangle, CheckCircle, Sparkles } from 'lucide-react';
+import { Bell, AlertOctagon, AlertTriangle, CheckCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '../constants';
 
 const SEV = {
@@ -65,17 +65,30 @@ function AlertRow({ alert }) {
   );
 }
 
-export default function CriteriaAlerts({ data, loading = false }) {
+export default function CriteriaAlerts({ data, loading = false, collapsed = false, onToggleCollapsed }) {
   const { alerts = [], criticalCount = 0, warningCount = 0 } = data ?? {};
 
   const criticos = alerts.filter(a => a.severity === 'critical');
   const atencao  = alerts.filter(a => a.severity === 'warning');
 
+  const headColor = criticalCount > 0 ? '#f85149' : warningCount > 0 ? '#f59e0b' : '#3fb950';
+  const ChevIcon  = collapsed ? ChevronDown : ChevronUp;
+
   return (
     <div className="card fade-in">
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Bell size={15} color={criticalCount > 0 ? '#f85149' : warningCount > 0 ? '#f59e0b' : '#3fb950'} />
+      {/* Header — clicável para recolher/expandir; contador sempre visível */}
+      <button
+        onClick={onToggleCollapsed}
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? 'Expandir alertas de critério' : 'Recolher alertas de critério'}
+        className="btn-inline"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+          background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+          textAlign: 'left', marginBottom: collapsed ? 0 : 14,
+        }}
+      >
+        <Bell size={15} color={headColor} />
         <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-tx1)', margin: 0 }}>
           Alertas de critério
         </h2>
@@ -90,13 +103,19 @@ export default function CriteriaAlerts({ data, loading = false }) {
             {alerts.length}
           </span>
         )}
-        <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--c-tx4)' }}>
+        <span style={{ fontSize: 11, color: 'var(--c-tx4)' }}>
           {criticalCount > 0 && <span style={{ color: '#f85149' }}>{criticalCount} crítico{criticalCount > 1 ? 's' : ''}</span>}
           {criticalCount > 0 && warningCount > 0 && ' · '}
           {warningCount > 0 && <span style={{ color: '#f59e0b' }}>{warningCount} atenção</span>}
         </span>
-      </div>
+        {onToggleCollapsed && (
+          <ChevIcon size={16} color="var(--c-tx4)" style={{ marginLeft: 'auto', flexShrink: 0 }} aria-hidden="true" />
+        )}
+      </button>
 
+      {/* Conteúdo recolhível */}
+      {collapsed ? null : (
+      <>
       {/* Lista */}
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -131,6 +150,8 @@ export default function CriteriaAlerts({ data, loading = false }) {
           P/VP, vacância, dívida líq./EBITDA e recuperação judicial são verificados na <strong style={{ color: 'var(--c-tx3)' }}>Análise IA</strong>.
         </p>
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -135,6 +135,9 @@ export default function App() {
     () => buildAlerts(assets, lancamentos, totalValue),
     [assets, lancamentos, totalValue]
   );
+  // Estado recolhido/expandido da seção de Alertas — em memória (persiste na
+  // sessão ao trocar de aba, pois o App permanece montado).
+  const [alertsCollapsed, setAlertsCollapsed] = useState(false);
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('resumo');
@@ -221,7 +224,12 @@ export default function App() {
           <>
             {alertData.alerts.length > 0 && (
               <div className="stagger-item" style={{ '--i': 0, marginBottom: 16 }}>
-                <CriteriaAlerts data={alertData} loading={loading} />
+                <CriteriaAlerts
+                  data={alertData}
+                  loading={loading}
+                  collapsed={alertsCollapsed}
+                  onToggleCollapsed={() => setAlertsCollapsed(c => !c)}
+                />
               </div>
             )}
           <ResumoTab
