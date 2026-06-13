@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, TrendingUp, TrendingDown, Sun, Moon, Eye, EyeOff } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Sun, Moon, Eye, EyeOff, Bell } from 'lucide-react';
 import KrakenLogo from './KrakenLogo';
 
 const fmtCurrency = v =>
@@ -29,6 +29,9 @@ export default function Header({
   hideValues = false, onToggleHideValues,  // privacidade: ocultar/mostrar valores
   onLogoClick,  // navigate back to the Resumo tab
   syncNode,     // optional: <SyncBadge /> rendered before the theme toggle
+  alertCount = 0,        // nº de alertas de critério ativos
+  alertCritical = false, // há ao menos um alerta crítico (vermelho)
+  onAlertsClick,         // navega até a seção de Alertas
 }) {
   const relativeTime = useRelativeTime(lastUpdate);
   const syncInterval = trading ? '30s' : '5m';
@@ -120,6 +123,39 @@ export default function Header({
             <span className="mx-1">·</span>
             <span>sync {syncInterval}</span>
           </div>
+
+          {/* ── Sino de alertas de critério ──────────────────────────── */}
+          {onAlertsClick && alertCount > 0 && (
+            <button
+              onClick={onAlertsClick}
+              aria-label={`${alertCount} ${alertCount === 1 ? 'alerta de critério' : 'alertas de critério'}`}
+              title={`${alertCount} ${alertCount === 1 ? 'alerta ativo' : 'alertas ativos'} — ver detalhes`}
+              className="btn-inline"
+              style={{
+                ...btnBase, width: 32, padding: 0, justifyContent: 'center', position: 'relative',
+                color: alertCritical ? '#f85149' : '#f59e0b',
+                borderColor: (alertCritical ? '#f85149' : '#f59e0b') + '55',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = (alertCritical ? '#f85149' : '#f59e0b'); }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = (alertCritical ? '#f85149' : '#f59e0b') + '55'; }}
+            >
+              <Bell size={13} aria-hidden="true" />
+              <span
+                aria-hidden="true"
+                className="mono"
+                style={{
+                  position: 'absolute', top: -6, right: -6,
+                  minWidth: 16, height: 16, padding: '0 4px',
+                  borderRadius: 99, fontSize: 10, fontWeight: 700, lineHeight: '16px',
+                  textAlign: 'center', color: '#fff',
+                  background: alertCritical ? '#f85149' : '#f59e0b',
+                  border: '1.5px solid var(--c-header-bg)',
+                }}
+              >
+                {alertCount > 9 ? '9+' : alertCount}
+              </span>
+            </button>
+          )}
 
           {/* Cloud sync badge */}
           {syncNode}

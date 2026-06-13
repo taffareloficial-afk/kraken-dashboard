@@ -1,5 +1,5 @@
 // v2.1.0 - formulario lancamentos refatorado (6 tipos, Renda Fixa, ETFs Int. US$)
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTheme }               from './hooks/useTheme';
 import { ThemeContext }            from './ThemeContext';
 import { usePortfolio }           from './hooks/usePortfolio';
@@ -34,6 +34,8 @@ import BenchmarkCard              from './components/BenchmarkCard';
 import OnboardingModal            from './components/OnboardingModal';
 import AIAnalysisTab              from './components/AIAnalysisTab';
 import ProjectionTab              from './components/ProjectionTab';
+import CriteriaAlerts             from './components/CriteriaAlerts';
+import { buildAlerts }            from './utils/krakenCompliance';
 import { CheckCircle }            from 'lucide-react';
 
 export default function App() {
@@ -128,6 +130,12 @@ export default function App() {
     return () => document.body.classList.remove('kraken-private');
   }, [hideValues]);
 
+  // ── Alertas automáticos de critério (client-side, custo zero) ─────────────
+  const alertData = useMemo(
+    () => buildAlerts(assets, lancamentos, totalValue),
+    [assets, lancamentos, totalValue]
+  );
+
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('resumo');
 
@@ -210,6 +218,12 @@ export default function App() {
       /* ── Resumo ──────────────────────────────────────────────────────── */
       case 'resumo':
         return (
+          <>
+            {alertData.alerts.length > 0 && (
+              <div className="stagger-item" style={{ '--i': 0, marginBottom: 16 }}>
+                <CriteriaAlerts data={alertData} loading={loading} />
+              </div>
+            )}
           <ResumoTab
             assets={assets}
             totalValue={totalValue}
@@ -225,6 +239,7 @@ export default function App() {
             lancamentos={lancamentos}
             proventosStats={proventosStats}
           />
+          </>
         );
 
       /* ── Carteira ─────────────────────────────────────────────────────── */
@@ -380,6 +395,9 @@ export default function App() {
         hideValues={hideValues}
         onToggleHideValues={() => setHideValues(v => !v)}
         onLogoClick={() => handleTabChange('resumo')}
+        alertCount={alertData.alerts.length}
+        alertCritical={alertData.criticalCount > 0}
+        onAlertsClick={() => handleTabChange('resumo')}
         syncNode={
           <SyncBadge
             user={user}
