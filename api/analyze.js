@@ -280,6 +280,19 @@ O modelo de alocação (40/25/20/10/5) é um **alvo de longo prazo**, NÃO uma r
 
 ---
 
+## 🟢 ORDEM DE BUSCA — VERDE PRIMEIRO (OBRIGATÓRIA PARA TODAS AS CLASSES)
+
+Cada critério da categoria tem três níveis: **🟢 VERDE = TOP (condição perfeita)**, **🟡 AMARELO = mínimo aceitável**, **🔴 VERMELHO = eliminação**. Ao recomendar QUALQUER ativo (FIIs, Ações, Renda Fixa, ETFs), siga estritamente esta ordem:
+
+- **PASSO 1 — Varredura VERDE:** faça uma busca avançada e EXAUSTIVA no mercado por ativos que atendem o nível VERDE (top / condição perfeita) de cada critério — ex.: FII com P/VP < ${C.fiis.pVP.ideal.toLocaleString('pt-BR')}, vacância < ${C.fiis.vacancy.ideal}% e DY estável/crescente há ${C.fiis.minTrackYears}+ anos; ação com P/VP < ${C.acoes.pVP.idealCyclical.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}, ROE consistente e Dívida/EBITDA < ${C.acoes.debtEbitda.idealNonFinancial.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}; Renda Fixa LCI/LCA isenta com a maior taxa; ETF na taxa ideal. Use web_search com vários termos antes de concluir que não há verde.
+- **PASSO 2 — Recomendar entre os VERDES:** se houver um ou mais ativos verdes, recomende entre eles, priorizando o MELHOR.
+- **PASSO 3 — Descer para AMARELO só na ausência de verde:** SOMENTE se NÃO existir nenhum ativo verde disponível no momento, desça para o nível AMARELO (mínimo aceitável) e recomende o melhor amarelo. Ao fazê-lo, declare explicitamente no relatório: "não há opção VERDE disponível agora nesta categoria, recomendando o melhor AMARELO".
+- **PASSO 4 — VERMELHO é sempre descartado:** qualquer ativo que caia em eliminação (vermelho) é descartado SEMPRE, independente de preço ou de não haver outras opções. Nunca recomende um vermelho como "menos pior".
+
+🔒 **REGRA CENTRAL:** NUNCA recomende um ativo AMARELO se existir um VERDE disponível. A IA não pode se satisfazer com o mínimo enquanto houver opção top no mercado — a busca no nível verde deve ser exaustiva ANTES de descer para o amarelo. Isso vale igualmente para a carteira atual (um ativo apenas amarelo é candidato a upgrade/troca se houver um verde qualificado na mesma categoria).
+
+---
+
 ## CONTEXTO MACROECONÔMICO
 
 Use seu conhecimento de treinamento para contexto macro. Informe a data aproximada do seu conhecimento e oriente o investidor a confirmar no BCB (bcb.gov.br) ou Google:
@@ -620,6 +633,7 @@ export function buildPrompt({ assets, lancamentos, currentAllocation, categoryVa
   lines.push('#### [3B] RECOMENDAÇÕES DE COMPRA (ESPECÍFICAS, NÃO GENÉRICAS)', '');
   lines.push('💰 FILA DE PRIORIDADE OBRIGATÓRIA: o capital vem de aportes mensais de valor VARIÁVEL (vendas passadas foram reinvestidas fora — não há caixa). Ordene TODAS as compras como fila de prioridade explícita (🥇 1º comprar / 🥈 2º / 🥉 3º...) que funcione para qualquer valor de aporte. Priorize: (1) categorias mais distantes da quantidade-alvo (ver tabela "Progresso de quantidade"), (2) categorias mais abaixo da alocação-alvo. Enquanto a categoria estiver abaixo da quantidade-alvo, prefira ativo NOVO qualificado a reforçar posição existente.', '');
   lines.push('⚖️ **Rebalanceamento NÃO é automático.** A meta de alocação é um GUIA (ver "MODELO É GUIA, NÃO LEI" no system prompt). Pondere: rebalancear (comprar a categoria mais abaixo da meta) É a preferência — MAS se houver uma oportunidade nitidamente superior num ativo de qualidade de uma categoria já na meta, recomende-a e explique o trade-off (quanto afasta da meta e por que compensa). Nunca recomende algo medíocre só para fechar porcentagem — se a categoria subponderada não tiver boa opção agora, diga para aguardar.', '');
+  lines.push('🟢 ORDEM VERDE PRIMEIRO (OBRIGATÓRIA — ver "ORDEM DE BUSCA — VERDE PRIMEIRO" no system prompt): faça busca EXAUSTIVA por ativos no nível VERDE (top/condição perfeita) de cada categoria e recomende entre eles. SÓ desça para o nível AMARELO (mínimo aceitável) se NÃO houver nenhum verde disponível — e, nesse caso, diga explicitamente que não havia opção verde. NUNCA recomende um amarelo havendo um verde. Vermelho (eliminação) é sempre descartado.', '');
   lines.push('⚡ CRÍTICO: Identifique PRIMEIRO quais são os MELHORES SETORES/SEGMENTOS neste momento, então recomende QUANTIDADE DIFERENTE baseada na qualidade:', '');
   lines.push('- Setor EXCELENTE: recomende 2-3 ativos', '');
   lines.push('- Setor BOM: recomende 1-2 ativos', '');

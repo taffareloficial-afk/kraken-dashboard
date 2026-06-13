@@ -103,7 +103,7 @@ function SectionTable({ section, isOpen, onToggle }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: 'var(--c-s2)' }}>
-                  {['Indicador', '✅ Mínimo para comprar', '🏆 Condição perfeita', '❌ Eliminação'].map(h => (
+                  {['Indicador', '🏆 Top — Condição perfeita', '✅ Mínimo aceitável', '❌ Eliminação'].map(h => (
                     <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--c-tx4)', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid var(--c-b2)', whiteSpace: 'nowrap' }}>
                       {h}
                     </th>
@@ -114,8 +114,8 @@ function SectionTable({ section, isOpen, onToggle }) {
                 {section.rows.map((r, i) => (
                   <tr key={r.ind} style={{ borderBottom: i < section.rows.length - 1 ? '1px solid var(--c-b3)' : 'none' }}>
                     <td style={{ padding: '8px 12px', color: 'var(--c-tx2)', fontWeight: 600, whiteSpace: 'nowrap' }}>{r.ind}</td>
-                    <td className="mono" style={{ padding: '8px 12px', color: '#3fb950', fontVariantNumeric: 'tabular-nums' }}>{r.min}</td>
-                    <td style={{ padding: '8px 12px', color: '#d29922' }}>{r.perfect}</td>
+                    <td style={{ padding: '8px 12px', color: '#3fb950', fontWeight: 600 }}>{r.perfect}</td>
+                    <td className="mono" style={{ padding: '8px 12px', color: '#d29922', fontVariantNumeric: 'tabular-nums' }}>{r.min}</td>
                     <td style={{ padding: '8px 12px', color: '#f85149' }}>{r.kill}</td>
                   </tr>
                 ))}
