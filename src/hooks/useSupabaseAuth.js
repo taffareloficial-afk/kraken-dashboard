@@ -6,7 +6,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { SB_URL, SB_KEY, SUPABASE_ENABLED } from '../lib/supabase';
+import { SB_URL, SB_KEY, SUPABASE_ENABLED, setSupabaseAccessToken } from '../lib/supabase';
 
 // createClient em si não faz chamadas de rede — só falha quando
 // auth.getSession() / signInWithOAuth() etc. são chamados.
@@ -23,6 +23,7 @@ export function useSupabaseAuth() {
 
     authClient.auth.getSession()
       .then(({ data: { session } }) => {
+        setSupabaseAccessToken(session?.access_token ?? null);
         setUser(session?.user ?? null);
         setLoading(false);
       })
@@ -32,6 +33,8 @@ export function useSupabaseAuth() {
       });
 
     const { data: { subscription } } = authClient.auth.onAuthStateChange((_event, session) => {
+      // Mantém o sbFetch com o JWT atual (login, TOKEN_REFRESHED, logout).
+      setSupabaseAccessToken(session?.access_token ?? null);
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -62,6 +65,7 @@ export function useSupabaseAuth() {
   const signOut = useCallback(async () => {
     if (!authClient) return;
     await authClient.auth.signOut();
+    setSupabaseAccessToken(null);
     setUser(null);
   }, []);
 

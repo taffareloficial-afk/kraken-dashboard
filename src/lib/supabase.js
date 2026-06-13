@@ -23,6 +23,16 @@ export const SUPABASE_ENABLED = Boolean(SB_URL && SB_KEY);
 // Exportado para compatibilidade com useSupabaseAuth (ele cria o próprio client)
 export const supabase = null;
 
+// ── Token de acesso do usuário logado ─────────────────────────────────────────
+// Definido por useSupabaseAuth a cada login/refresh de sessão. Enquanto for
+// null, as chamadas caem na publishable key (relevante só ANTES de ligar o RLS;
+// com RLS + login obrigatório, toda requisição leva o JWT do usuário, e é o
+// auth.uid() desse JWT que as policies usam).
+let _accessToken = null;
+export function setSupabaseAccessToken(token) {
+  _accessToken = token || null;
+}
+
 console.log('[Supabase] fetch-client init —', SB_URL, '| enabled:', SUPABASE_ENABLED);
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -30,8 +40,10 @@ console.log('[Supabase] fetch-client init —', SB_URL, '| enabled:', SUPABASE_E
 // ═════════════════════════════════════════════════════════════════════════════
 const REST = `${SB_URL}/rest/v1`;
 const H = () => ({               // função para evitar objeto mutável compartilhado
+  // apikey identifica o projeto (role anon); o Bearer com o JWT do usuário
+  // promove a requisição para o role authenticated e define o auth.uid().
   'apikey':        SB_KEY,
-  'Authorization': `Bearer ${SB_KEY}`,
+  'Authorization': `Bearer ${_accessToken || SB_KEY}`,
   'Content-Type':  'application/json',
 });
 

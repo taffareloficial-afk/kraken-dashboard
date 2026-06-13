@@ -34,9 +34,10 @@ import BenchmarkCard              from './components/BenchmarkCard';
 import OnboardingModal            from './components/OnboardingModal';
 import AIAnalysisTab              from './components/AIAnalysisTab';
 import ProjectionTab              from './components/ProjectionTab';
+import LoginScreen                from './components/LoginScreen';
 import CriteriaAlerts             from './components/CriteriaAlerts';
 import { buildAlerts }            from './utils/krakenCompliance';
-import { CheckCircle }            from 'lucide-react';
+import { CheckCircle, Loader2 }   from 'lucide-react';
 
 export default function App() {
   // ── Theme ─────────────────────────────────────────────────────────────────
@@ -380,6 +381,38 @@ export default function App() {
         return null;
     }
   };
+
+  // ── Login obrigatório ──────────────────────────────────────────────────────
+  // Com Supabase habilitado, o dashboard só carrega após autenticação. Enquanto
+  // a sessão é verificada, evita piscar a tela de login. (RLS no banco garante
+  // que mesmo a API só responda com um JWT válido — o gate é a camada de UX.)
+  const checkingSession = SUPABASE_ENABLED && authLoading;
+  const showLoginGate   = SUPABASE_ENABLED && !authLoading && !user;
+
+  if (checkingSession) {
+    return (
+      <ThemeContext.Provider value={isDark}>
+        <div style={{
+          minHeight: '100vh', background: 'var(--c-bg)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Loader2 size={22} color="var(--c-tx4)" style={{ animation: 'spin 1s linear infinite' }} />
+        </div>
+      </ThemeContext.Provider>
+    );
+  }
+
+  if (showLoginGate) {
+    return (
+      <ThemeContext.Provider value={isDark}>
+        <LoginScreen
+          onSubmit={sbAuth.signInWithEmail}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+        />
+      </ThemeContext.Provider>
+    );
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
