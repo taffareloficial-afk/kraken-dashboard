@@ -5,6 +5,7 @@ import { ThemeContext }            from './ThemeContext';
 import { usePortfolio }           from './hooks/usePortfolio';
 import { useLancamentos, loadSuppressedAutologKeys } from './hooks/useLancamentos';
 import { useProventosProximos }   from './hooks/useProventosProximos';
+import { useAutologProventos }    from './hooks/useAutologProventos';
 import { useSeedData }            from './hooks/useSeedData';
 import { usePortfolioHistory }    from './hooks/usePortfolioHistory';
 import { useOnboarding }          from './hooks/useOnboarding';
@@ -32,6 +33,7 @@ import FocusMode                  from './components/FocusMode';
 import BenchmarkCard              from './components/BenchmarkCard';
 import OnboardingModal            from './components/OnboardingModal';
 import AIAnalysisTab              from './components/AIAnalysisTab';
+import ProjectionTab              from './components/ProjectionTab';
 import { CheckCircle }            from 'lucide-react';
 
 export default function App() {
@@ -111,6 +113,10 @@ export default function App() {
 
   const proventosHook = useProventosProximos(proventosTickers);
   const { rows: proventosRows } = proventosHook;
+
+  // ── Auto-log de proventos — quando dataPagamento chega, cria lançamento ────
+  const suppressedKeys = loadSuppressedAutologKeys();
+  useAutologProventos(proventosRows, lancamentos, suppressedKeys, addLancamento);
 
   // ── Privacidade (ocultar valores) ─────────────────────────────────────────
   const [hideValues, setHideValues] = useState(() => {
@@ -301,6 +307,18 @@ export default function App() {
         return (
           <div className="stagger-item" style={{ '--i': 0 }}>
             <ProventosProximos {...proventosHook} adjustedPortfolio={adjustedPortfolio} lancamentos={lancamentos} />
+          </div>
+        );
+
+      /* ── Projeção · Simulador de Metas ────────────────────────────────── */
+      case 'projecao':
+        return (
+          <div className="stagger-item" style={{ '--i': 0 }}>
+            <ProjectionTab
+              totalValue={totalValue}
+              lancamentos={lancamentos}
+              loading={loading}
+            />
           </div>
         );
 

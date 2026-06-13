@@ -3,13 +3,14 @@
  * Receives activeTab + onChange from App and mirrors 4 of the 6 tabs.
  */
 
-import { Home, BarChart2, Calendar, BookOpen } from 'lucide-react';
+import { Home, BarChart2, Calendar, BookOpen, Rocket } from 'lucide-react';
 
 // Análise, Histórico e Análise IA ficam disponíveis apenas no desktop (TabNav).
 const MOBILE_TABS = [
   { id: 'resumo',      label: 'Início',      Icon: Home      },
   { id: 'carteira',    label: 'Carteira',    Icon: BarChart2 },
   { id: 'proventos',   label: 'Proventos',   Icon: Calendar  },
+  { id: 'projecao',    label: 'Projeção',    Icon: Rocket    },
   { id: 'lancamentos', label: 'Lançamentos', Icon: BookOpen  },
 ];
 

@@ -4,7 +4,7 @@
  * Uses role="tablist" / role="tab" for full ARIA tab-panel semantics.
  */
 
-import { LayoutDashboard, Briefcase, TrendingUp, LineChart, Landmark, ClipboardList, Zap } from 'lucide-react';
+import { LayoutDashboard, Briefcase, TrendingUp, LineChart, Landmark, ClipboardList, Zap, Rocket } from 'lucide-react';
 
 export const TABS = [
   { id: 'resumo',        label: 'Resumo',        Icon: LayoutDashboard },
@@ -12,6 +12,7 @@ export const TABS = [
   { id: 'analise',       label: 'Análise',       Icon: TrendingUp },
   { id: 'historico',     label: 'Histórico',     Icon: LineChart },
   { id: 'proventos',     label: 'Proventos',     Icon: Landmark },
+  { id: 'projecao',      label: 'Projeção',      Icon: Rocket },
   { id: 'lancamentos',   label: 'Lançamentos',   Icon: ClipboardList },
   { id: 'analise-ia-v3', label: 'Análise IA v3', Icon: Zap },
 ];
