@@ -78,7 +78,9 @@ function getTickerType(ticker, assets) {
 
 export default function ProventosSummary({ stats, assets = [] }) {
   const { totalMes, totalAno, totalGeral, totalPorAtivo } = stats;
-  const [expandedSections, setExpandedSections] = useState(new Set(['Ações', 'FIIs', 'ETFs', 'Cripto', 'Renda Fixa']));
+  // Padrão inicial: todos os cards de categoria RECOLHIDOS (Set vazio = nenhum
+  // expandido). O usuário expande manualmente clicando no cabeçalho.
+  const [expandedSections, setExpandedSections] = useState(new Set());
 
   // Categorize proventos by investment type
   const proventosByCategory = Object.entries(totalPorAtivo).reduce((acc, [ticker, value]) => {
