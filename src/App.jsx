@@ -138,7 +138,9 @@ export default function App() {
   );
   // Estado recolhido/expandido da seção de Alertas — em memória (persiste na
   // sessão ao trocar de aba, pois o App permanece montado).
-  const [alertsCollapsed, setAlertsCollapsed] = useState(false);
+  // Padrão inicial: RECOLHIDO (só cabeçalho + contador); o usuário expande
+  // manualmente se quiser ver a lista.
+  const [alertsCollapsed, setAlertsCollapsed] = useState(true);
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('resumo');
