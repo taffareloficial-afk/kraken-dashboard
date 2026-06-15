@@ -10,9 +10,27 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import {
-  Brain, Sparkles, Clock, Cpu, RefreshCw,
+  Brain, Sparkles, Clock, Cpu, RefreshCw, Download,
   TrendingUp, Shield, Target, Zap, ChevronRight, Loader2,
 } from 'lucide-react';
+import KrakenCriteriaPanel from './KrakenCriteriaPanel';
+import AnalysisAssetCards, { splitCardsFromMarkdown } from './AnalysisAssetCards';
+
+// Renderiza o corpo da análise: cards de ativo (ETAPA 1) + restante em markdown.
+function AnalysisBody({ text }) {
+  const { cards, cleaned, pending } = splitCardsFromMarkdown(text);
+  return (
+    <>
+      {cards && <AnalysisAssetCards cards={cards} />}
+      <MarkdownBlock text={cards ? cleaned : (pending ? cleaned : text)} />
+      {pending && (
+        <p style={{ fontSize: 12, color: '#8b949e', margin: '8px 0' }}>
+          ⏳ montando os cards dos ativos…
+        </p>
+      )}
+    </>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline markdown renderer (h1-h3, bold, italic, code, tables, lists, hr)
@@ -495,6 +513,53 @@ export default function AIAnalysisTab({
     setTimeout(() => handleAnalyze(), 100);
   };
 
+  // ── Export JSON da análise (snapshot da carteira + análise completa) ────────
+  const handleDownloadJSON = () => {
+    if (!result) return;
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      analyzedAt: result.analyzedAt ?? savedAnalysis?.timestamp ?? null,
+      model:      result.model ?? null,
+      tokens:     { input: result.inputTokens ?? null, output: result.outputTokens ?? null },
+      // Snapshot da carteira NO MOMENTO DO EXPORT (cotações atuais)
+      portfolioSnapshot: {
+        totalValue,
+        currentAllocation,
+        assets: (assets ?? []).map(a => ({
+          ticker:     a.ticker,
+          type:       a.type,
+          shares:     a.shares,
+          price:      a.price,
+          totalValue: a.totalValue,
+          weightPct:  totalValue > 0 ? +((a.totalValue / totalValue) * 100).toFixed(2) : 0,
+        })),
+      },
+      // Análise completa em markdown (vereditos, recomendações e justificativas)
+      analysisMarkdown: result.analysis ?? '',
+    };
+    const stamp = (result.analyzedAt ?? new Date().toISOString()).slice(0, 16).replace(/[T:]/g, '-');
+    const blob  = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href      = url;
+    a.download  = `kraken-analise-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const DownloadButton = () => (
+    <button
+      onClick={handleDownloadJSON}
+      title="Baixar análise + snapshot da carteira em JSON"
+      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 7, border: '1px solid var(--c-b1)', background: 'transparent', color: 'var(--c-tx3)', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 150ms' }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-surface)'; e.currentTarget.style.color = 'var(--c-tx1)'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-tx3)'; }}
+    >
+      <Download size={12} />
+      Baixar JSON
+    </button>
+  );
+
   // ── Format timestamp ────────────────────────────────────────────────────────
   const fmtTimestamp = iso => {
     if (!iso) return '';
@@ -609,6 +674,9 @@ export default function AIAnalysisTab({
           </button>
         )}
       </div>
+
+      {/* Critérios usados pela IA para recomendar (colapsável, lê do config) */}
+      <KrakenCriteriaPanel />
     </>
   );
 
@@ -638,7 +706,7 @@ export default function AIAnalysisTab({
 
             {/* Analysis content */}
             <div>
-              <MarkdownBlock text={displayText} />
+              <AnalysisBody text={displayText} />
             </div>
           </div>
 
@@ -671,15 +739,18 @@ export default function AIAnalysisTab({
                 )}
               </div>
 
-              <button
-                onClick={handleNewAnalysis}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 7, border: '1px solid var(--c-b1)', background: 'transparent', color: 'var(--c-tx3)', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 150ms' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-surface)'; e.currentTarget.style.color = 'var(--c-tx1)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-tx3)'; }}
-              >
-                <RefreshCw size={12} />
-                Nova análise
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <DownloadButton />
+                <button
+                  onClick={handleNewAnalysis}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 7, border: '1px solid var(--c-b1)', background: 'transparent', color: 'var(--c-tx3)', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 150ms' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-surface)'; e.currentTarget.style.color = 'var(--c-tx1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-tx3)'; }}
+                >
+                  <RefreshCw size={12} />
+                  Nova análise
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -829,7 +900,7 @@ export default function AIAnalysisTab({
 
           {/* Analysis content */}
           <div>
-            <MarkdownBlock text={displayText} />
+            <AnalysisBody text={displayText} />
             {/* Blinking cursor while streaming */}
             {isStreaming && (
               <span style={{ display: 'inline-block', width: 8, height: 16, background: '#7c3aed', borderRadius: 2, marginLeft: 2, verticalAlign: 'middle', animation: 'blink 0.9s step-end infinite' }} />
@@ -867,6 +938,7 @@ export default function AIAnalysisTab({
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>
+              <DownloadButton />
               {showNewIndicator && (
                 <button
                   onClick={handleClearAnalysis}

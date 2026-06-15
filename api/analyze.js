@@ -622,17 +622,22 @@ export function buildPrompt({ assets, lancamentos, currentAllocation, categoryVa
 
   lines.push('### [ETAPA 1] ANÁLISE COMPLETA DA CARTEIRA ATUAL (DINÂMICA)', '');
   lines.push('Analise TODOS os ativos que existem na carteira NESTE MOMENTO. A análise é dinâmica — sempre adapta-se aos ativos atuais.', '');
-  lines.push('Para CADA ativo listado acima, faça:', '');
-  lines.push('- **Nome do ativo** (ex: TRXF11, HGLG11, BBSE3, BTC)', '');
-  lines.push('- **Tipo:** FII | Ação | ETF | Renda Fixa | Cripto', '');
-  lines.push('- **Dados Fundamentalistas (pesquise via web_search ou use dados de treinamento com 📌):**', '');
-  lines.push('  - Para FIIs: P/VP, DY anualizado, Vacância física, Liquidez diária, Segmento', '');
-  lines.push('  - Para Ações: P/L, P/VP, ROE (%), DY, Dívida Líquida/EBITDA, Setor', '');
-  lines.push('  - Para Cripto: Preço atual em BRL, Volatilidade (% mês), Tendência', '');
-  lines.push('- **Condição atual:** Bom | Fraco | Neutro', '');
-  lines.push('- **🔍 Riscos ocultos:** investigue ATIVAMENTE os sinais de alerta da seção "DETECÇÃO DE RISCOS OCULTOS" do system prompt (value trap por P/L ou P/VP baixo demais, DY alto demais e por quê, dívida/vacância subindo, liquidez caindo, divergência do benchmark). Liste TODOS os encontrados — não esconda nada. Se não houver, escreva "Nenhum risco relevante detectado".', '');
-  lines.push(`- **🏦 Risco de solvência (obrigatório):** pesquise via web_search a saúde financeira e o endividamento (Ações: Dívida líq./EBITDA, prejuízos trimestrais, RJ/rating; FIIs: RJ de inquilinos relevantes, alavancagem sobre o PL) no cenário de Selic ~14,5%. Emita a linha **"Risco de solvência: ${C.solvency.ratingLevels.join(' / ')}"** com justificativa em 1 frase. Aplique os critérios de eliminação por insolvência do system prompt.`, '');
-  lines.push('- **✅ VEREDITO (obrigatório):** escolha UMA opção em negrito — **✅ COMPRAR** | **⚠️ MANTER** | **❌ VENDER** | **🤔 CONSIDERE** — e justifique em 1 frase com dados.', '');
+  lines.push('Para CADA ativo aplique TODOS os critérios Kraken da categoria (FIIs: P/VP, DY anualizado, vacância, liquidez, segmento; Ações: P/L, P/VP, ROE, DY, Dívida líq./EBITDA, setor — pesquise via web_search ou use treinamento), investigue ATIVAMENTE os riscos ocultos (seção "DETECÇÃO DE RISCOS OCULTOS") e a saúde financeira / risco de solvência. Mas a SAÍDA da ETAPA 1 NÃO é texto corrido: emita os resultados de TODOS os ativos em UM ÚNICO bloco fenced ```kraken-cards``` com um JSON. NÃO escreva análise por ativo em prosa fora desse bloco — o bloco É a ETAPA 1.', '');
+  lines.push('', '');
+  lines.push('Campos por ativo (um objeto por ativo da carteira):', '');
+  lines.push('- `ticker` (string) e `type` ("FII" | "Ação" | "ETF" | "Renda Fixa" | "Cripto").', '');
+  lines.push('- `recommendation`: "comprar" | "manter" | "vender" | "considere".', '');
+  lines.push('- `potential`: "alto" | "medio" | "baixo" (só Ações/FIIs; use null para ETF/RF/Cripto).', '');
+  lines.push('- `criteria`: array de objetos `{ "label", "value", "limit", "status" }`. `status`: "pass" (passa/verde-top), "warn" (no mínimo/amarelo), "fail" (estoura o limite/eliminação). Inclua os critérios da categoria E SEMPRE o de **concentração** (peso do ativo vs teto de ' + C.allocation.maxPerAsset + '%, da tabela de validação). Ex.: `{"label":"P/VP","value":"0,93","limit":"teto 1,05","status":"pass"}`.', '');
+  lines.push('- `dividend_trend`: array de números com os proventos/cota recentes (6–12 pontos) para o sparkline; `[]` se desconhecido.', '');
+  lines.push('- `dividend_delta`: string curta da variação (ex.: "↑ 8% vs ano passado") ou null.', '');
+  lines.push('- `hidden_risks`: array de strings com os riscos ocultos E de solvência detectados (RJ própria/de inquilino, dívida alta, DY inflado, prejuízos, rebaixamento de rating); `[]` se nenhum.', '');
+  lines.push('- `verdict`: frase curta de justificativa do veredito.', '');
+  lines.push('', '');
+  lines.push('Regras do bloco: JSON VÁLIDO (sem comentários, sem vírgula sobrando, aspas duplas); números com vírgula decimal SOMENTE dentro de strings de `value`/`limit`; em `dividend_trend` use ponto decimal. NÃO inclua a nota 0–10 — o dashboard a calcula a partir dos `status` e `hidden_risks`. Formato:', '');
+  lines.push('```kraken-cards', '');
+  lines.push('{"assets":[{"ticker":"TRXF11","type":"FII","recommendation":"comprar","potential":"alto","criteria":[{"label":"P/VP","value":"0,93","limit":"teto 1,05","status":"pass"},{"label":"Dividend Yield","value":"11,2%","limit":"mín 10,5%","status":"pass"},{"label":"Vacância","value":"4%","limit":"teto 10%","status":"pass"},{"label":"Concentração","value":"8,2%","limit":"teto 10%","status":"warn"}],"dividend_trend":[0.90,0.91,0.93,0.93,0.95,0.97],"dividend_delta":"↑ 8% vs ano passado","hidden_risks":[],"verdict":"P/VP descontado e DY consistente; logística com vacância baixa."}]}', '');
+  lines.push('```', '');
   lines.push('', '');
 
   lines.push('### [ETAPA 2] RELATÓRIO DE CONDIÇÃO ATUAL', '');
