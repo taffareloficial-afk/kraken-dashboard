@@ -293,6 +293,30 @@ Cada critério da categoria tem três níveis: **🟢 VERDE = TOP (condição pe
 
 ---
 
+## 💎 POTENCIAL DE VALORIZAÇÃO — RÉGUA DE ORDENAÇÃO (NÃO ELIMINA) — só Ações e FIIs
+
+🔑 **REGRA CENTRAL (trava vs régua):** o **dividendo é a TRAVA** (decide quem entra) e a **valorização é a RÉGUA** (ordena quem já entrou). Nunca sacrifique dividendo por valorização. **Nenhum ativo sem dividendo entra; nenhum ativo com dividendo é barrado por valorização baixa** — quando muito, fica mais abaixo na lista.
+
+Aplique nesta ordem, para CADA candidato a compra (Ação ou FII):
+
+- **FILTRO 1 — DIVIDENDO (obrigatório, ELIMINA):** descarte todo ativo que não paga dividendo. Ação: DY ≥ ${C.acoes.dy.min}%. FII: DY ≥ (Selic − ${C.fiis.dy.selicSpread}%), referência ${C.fiis.dy.min.toLocaleString('pt-BR')}%. Ativo sem dividendo é eliminado **mesmo com alto potencial de valorização**.
+- **FILTRO 2 — DEMAIS CRITÉRIOS KRAKEN (obrigatório, ELIMINA):** aplique TODOS os critérios já definidos (P/VP, P/L, ROE, Dívida/EBITDA, vacância, liquidez, saúde financeira / risco de insolvência / recuperação judicial). Quem não passa, é eliminado.
+- **CRITÉRIO 3 — POTENCIAL DE VALORIZAÇÃO (NÃO elimina; ORDENA + MARCA):** entre os APROVADOS nos filtros 1 e 2, avalie o potencial de valorização usando **AMBOS** os fatores:
+  - **(a) DESCONTO:** P/VP (FIIs) ou P/L (Ações) **abaixo da própria média histórica** do ativo — mais espaço para subir. Quantifique o desconto em % vs a média histórica (ex.: "P/L 18% abaixo da média de 3-5 anos"). **NÃO use preço-alvo de analistas** (instável e pouco confiável).
+  - **(b) FUNDAMENTOS SAUDÁVEIS:** lucro/receita crescendo, setor sem deterioração — protege contra **armadilha de valor** (barato porque é bom, não barato porque está decadente). Um ativo "descontado" mas com fundamento piorando NÃO é alto potencial.
+
+Com os aprovados, a IA DEVE:
+1. **ORDENAR** as recomendações do MAIOR para o MENOR potencial de valorização (o melhor aparece primeiro).
+2. **MARCAR** cada uma com selo de nível:
+   - **🔼 Alto potencial** — descontado vs média histórica **E** fundamentos em melhora clara.
+   - **➡️ Médio potencial** — qualificado e saudável, mas próximo da média (pouco desconto) ou crescimento apenas estável.
+   (Reservado a quem passou nos filtros 1 e 2 — o selo nunca substitui a eliminação.)
+3. **JUSTIFICAR o selo** em 1 frase curta com números (ex.: "descontado 18% vs P/VP médio + lucro crescendo há 3 trimestres").
+
+Integração com a ordem "verde primeiro": o nível de qualidade (verde/amarelo) continua decidindo QUEM se recomenda; a régua de valorização decide a ORDEM e o selo entre os já recomendados.
+
+---
+
 ## CONTEXTO MACROECONÔMICO
 
 Use seu conhecimento de treinamento para contexto macro. Informe a data aproximada do seu conhecimento e oriente o investidor a confirmar no BCB (bcb.gov.br) ou Google:
@@ -634,6 +658,7 @@ export function buildPrompt({ assets, lancamentos, currentAllocation, categoryVa
   lines.push('💰 FILA DE PRIORIDADE OBRIGATÓRIA: o capital vem de aportes mensais de valor VARIÁVEL (vendas passadas foram reinvestidas fora — não há caixa). Ordene TODAS as compras como fila de prioridade explícita (🥇 1º comprar / 🥈 2º / 🥉 3º...) que funcione para qualquer valor de aporte. Priorize: (1) categorias mais distantes da quantidade-alvo (ver tabela "Progresso de quantidade"), (2) categorias mais abaixo da alocação-alvo. Enquanto a categoria estiver abaixo da quantidade-alvo, prefira ativo NOVO qualificado a reforçar posição existente.', '');
   lines.push('⚖️ **Rebalanceamento NÃO é automático.** A meta de alocação é um GUIA (ver "MODELO É GUIA, NÃO LEI" no system prompt). Pondere: rebalancear (comprar a categoria mais abaixo da meta) É a preferência — MAS se houver uma oportunidade nitidamente superior num ativo de qualidade de uma categoria já na meta, recomende-a e explique o trade-off (quanto afasta da meta e por que compensa). Nunca recomende algo medíocre só para fechar porcentagem — se a categoria subponderada não tiver boa opção agora, diga para aguardar.', '');
   lines.push('🟢 ORDEM VERDE PRIMEIRO (OBRIGATÓRIA — ver "ORDEM DE BUSCA — VERDE PRIMEIRO" no system prompt): faça busca EXAUSTIVA por ativos no nível VERDE (top/condição perfeita) de cada categoria e recomende entre eles. SÓ desça para o nível AMARELO (mínimo aceitável) se NÃO houver nenhum verde disponível — e, nesse caso, diga explicitamente que não havia opção verde. NUNCA recomende um amarelo havendo um verde. Vermelho (eliminação) é sempre descartado.', '');
+  lines.push('💎 POTENCIAL DE VALORIZAÇÃO (só Ações e FIIs — ver "POTENCIAL DE VALORIZAÇÃO — RÉGUA DE ORDENAÇÃO" no system prompt): dividendo é a TRAVA (Filtro 1 elimina quem não paga), demais critérios Kraken são o Filtro 2 (eliminam), e a valorização é a RÉGUA que apenas ORDENA e MARCA os aprovados — NUNCA elimina. Entre os já qualificados, ORDENE do MAIOR para o MENOR potencial (desconto vs média histórica de P/VP ou P/L + fundamentos em melhora, sem armadilha de valor; NÃO use preço-alvo de analistas) e atribua o selo 🔼 Alto potencial ou ➡️ Médio potencial.', '');
   lines.push('⚡ CRÍTICO: Identifique PRIMEIRO quais são os MELHORES SETORES/SEGMENTOS neste momento, então recomende QUANTIDADE DIFERENTE baseada na qualidade:', '');
   lines.push('- Setor EXCELENTE: recomende 2-3 ativos', '');
   lines.push('- Setor BOM: recomende 1-2 ativos', '');
@@ -646,6 +671,7 @@ export function buildPrompt({ assets, lancamentos, currentAllocation, categoryVa
   lines.push('- **Ranking do setor:** 1º melhor | 2º | 3º [para validar diversificação inteligente]', '');
   lines.push('- **Dados Fundamentalistas:** P/VP: X | DY: X% | P/L: X | ROE: X% | etc (com pesquisa web_search)', '');
   lines.push('- **Por quê é bom:** [argumentação concreta com dados, NÃO genérica]', '');
+  lines.push('- **💎 Potencial de valorização (só Ações/FIIs):** selo **🔼 Alto potencial** ou **➡️ Médio potencial** + 1 frase com números (ex.: "descontado 18% vs P/VP médio histórico + lucro crescendo há 3 trimestres"). Lembre: isto só ORDENA e marca — não elimina; quem chegou aqui já passou no dividendo (trava) e nos demais critérios.', '');
   lines.push('- **Quantidade:** X cotas [quantidade específica, NÃO "alguns" ou "quanto puder"]', '');
   lines.push(`- **✅ Validação (OBRIGATÓRIA):** "Concentração resultante = X,X% (máx: ${C.allocation.maxPerAsset}%)" — use a tabela de validação de concentração acima; se ultrapassar, ajuste a quantidade ou descarte. Confirme também que a categoria continua dentro da QUANTIDADE-ALVO (ex: comprar um FII novo só se a carteira ficar com no máximo ${C.allocation.fiis.count} FIIs).`, '');
   lines.push('', '');
